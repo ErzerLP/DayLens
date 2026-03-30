@@ -36,15 +36,38 @@ func (s *StorageService) DeleteBefore(ctx context.Context, userID int, beforeDat
 		return nil, fmt.Errorf("delete before: %w: date format", ErrFieldInvalid)
 	}
 
+	// 1. 先查询即将删除的活动，提取截图 key
+	activities, _, err := s.activityRepo.QueryByDate(ctx, userID, beforeDate, "", "", 10000, 0)
+	if err != nil {
+		return nil, fmt.Errorf("query activities for cleanup: %w", err)
+	}
+
+	// 收集所有截图 key（滤掉 beforeDate 之后的）
+	var screenshotKeys []string
+	for _, a := range activities {
+		ts := time.Unix(a.Timestamp, 0)
+		if ts.Before(before) && a.ScreenshotKey != nil && *a.ScreenshotKey != "" {
+			screenshotKeys = append(screenshotKeys, *a.ScreenshotKey)
+		}
+	}
+
+	// 2. 删除截图文件
+	deletedScreenshots := int64(0)
+	for _, key := range screenshotKeys {
+		if err := s.fileStorage.Delete(ctx, key); err == nil {
+			deletedScreenshots++
+		}
+	}
+
+	// 3. 删除活动记录
 	deletedActivities, err := s.activityRepo.DeleteBefore(ctx, userID, before)
 	if err != nil {
 		return nil, fmt.Errorf("delete activities: %w", err)
 	}
 
-	// TODO: 阶段 6 集成截图清理
 	return &activity.CleanupResult{
 		DeletedActivities:  deletedActivities,
-		DeletedScreenshots: 0,
-		FreedMB:            0,
+		DeletedScreenshots: deletedScreenshots,
+		FreedMB:            0, // 精确计算开销大，暂时忽略
 	}, nil
 }

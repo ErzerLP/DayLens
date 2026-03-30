@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"daylens-server/internal/application/port"
 	"daylens-server/internal/domain/activity"
@@ -68,17 +69,69 @@ func (s *SearchService) Ask(ctx context.Context, userID int, question, dateConte
 	return &activity.AiAnswer{Answer: answer, References: refs}, nil
 }
 
-// Chat AI 助手多轮对话
+// Chat AI 助手多轮对话（支持自动工具调用）
 func (s *SearchService) Chat(ctx context.Context, userID int, chatMessages []activity.ChatMessage, tools []string) (*activity.AssistantReply, error) {
-	messages := make([]port.Message, 0, len(chatMessages)+1)
-	messages = append(messages, port.Message{
-		Role:    "system",
-		Content: "你是 DayLens 助手，可以分析用户的工作数据、生成建议。",
-	})
+	// 1. 如果请求了工具，先自动执行工具调用收集上下文
+	var toolCalls []activity.ToolCall
+	var toolContext string
+
+	for _, tool := range tools {
+		switch tool {
+		case "search":
+			// 从最后一条用户消息中提取关键词作为搜索
+			lastMsg := ""
+			for i := len(chatMessages) - 1; i >= 0; i-- {
+				if chatMessages[i].Role == "user" {
+					lastMsg = chatMessages[i].Content
+					break
+				}
+			}
+			if lastMsg != "" {
+				items, total, err := s.activityRepo.Search(ctx, userID, lastMsg, 10)
+				if err == nil && total > 0 {
+					searchResult := fmt.Sprintf("搜索到 %d 条相关活动:\n", total)
+					for _, item := range items {
+						searchResult += fmt.Sprintf("- [%s] %s: %s\n", item.AppName, item.MatchField, item.Excerpt)
+					}
+					toolCalls = append(toolCalls, activity.ToolCall{
+						Tool:   "search",
+						Input:  map[string]string{"query": lastMsg},
+						Output: searchResult,
+					})
+					toolContext += "\n[搜索结果]\n" + searchResult
+				}
+			}
+		case "stats":
+			stats, err := s.activityRepo.GetDailyStats(ctx, userID, time.Now().Format("2006-01-02"))
+			if err == nil && stats != nil {
+				statsResult := fmt.Sprintf("今日统计: 总时长 %d 分钟, 活跃 %d 小时, 截图 %d 张\n",
+					stats.TotalDuration/60, stats.ActiveHours, stats.ScreenshotCount)
+				for _, app := range stats.AppUsage {
+					statsResult += fmt.Sprintf("- %s: %d 分钟\n", app.AppName, app.Duration/60)
+				}
+				toolCalls = append(toolCalls, activity.ToolCall{
+					Tool:   "stats",
+					Input:  map[string]string{"date": time.Now().Format("2006-01-02")},
+					Output: statsResult,
+				})
+				toolContext += "\n[今日统计]\n" + statsResult
+			}
+		}
+	}
+
+	// 2. 构建消息列表
+	messages := make([]port.Message, 0, len(chatMessages)+2)
+	systemPrompt := "你是 DayLens 助手，可以分析用户的工作数据、生成建议。"
+	if toolContext != "" {
+		systemPrompt += "\n\n以下是自动收集的参考数据：" + toolContext
+	}
+	messages = append(messages, port.Message{Role: "system", Content: systemPrompt})
+
 	for _, m := range chatMessages {
 		messages = append(messages, port.Message{Role: m.Role, Content: m.Content})
 	}
 
+	// 3. 调用 AI
 	reply, err := s.aiProvider.Chat(ctx, messages)
 	if err != nil {
 		return nil, fmt.Errorf("chat: %w", err)
@@ -86,7 +139,7 @@ func (s *SearchService) Chat(ctx context.Context, userID int, chatMessages []act
 
 	return &activity.AssistantReply{
 		Reply:     reply,
-		ToolCalls: []activity.ToolCall{},
+		ToolCalls: toolCalls,
 	}, nil
 }
 
