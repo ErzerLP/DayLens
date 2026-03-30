@@ -70,7 +70,11 @@ func (s *Scheduler) Stop() {
 
 // generateDailyReport 定时生成当日日报
 func (s *Scheduler) generateDailyReport() {
-	date := time.Now().Format("2006-01-02")
+	loc, _ := time.LoadLocation(s.cfg.Server.Timezone)
+	if loc == nil {
+		loc = time.UTC
+	}
+	date := time.Now().In(loc).Format("2006-01-02")
 	slog.Info("开始定时生成日报", "date", date)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -86,7 +90,12 @@ func (s *Scheduler) generateDailyReport() {
 
 // updateHourlySummary 更新当前小时的摘要
 func (s *Scheduler) updateHourlySummary() {
-	now := time.Now()
+	// 使用配置的时区
+	loc, err := time.LoadLocation(s.cfg.Server.Timezone)
+	if err != nil {
+		loc = time.UTC
+	}
+	now := time.Now().In(loc)
 	date := now.Format("2006-01-02")
 	hour := now.Hour() - 1 // 统计上一小时
 	if hour < 0 {

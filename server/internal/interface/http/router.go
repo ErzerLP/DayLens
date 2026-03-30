@@ -82,6 +82,10 @@ func NewPublicRouter(deps *RouterDeps) *gin.Engine {
 		v1.POST("/config/ai/test", deps.Config.TestAI)
 		v1.GET("/config/ai/providers", deps.Config.ListProviders)
 
+		// 时区配置
+		v1.GET("/config/timezone", deps.Config.GetTimezone)
+		v1.PUT("/config/timezone", deps.Config.SaveTimezone)
+
 		// WebSocket
 		v1.GET("/ws", deps.WS.Upgrade)
 	}

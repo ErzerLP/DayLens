@@ -56,12 +56,34 @@ export default function SettingsPage() {
 
 // ===== 服务器设置 =====
 
+// 常用时区列表
+const TIMEZONES = [
+  { value: "Asia/Shanghai", label: "中国标准时间 (UTC+8)" },
+  { value: "Asia/Tokyo", label: "日本标准时间 (UTC+9)" },
+  { value: "Asia/Seoul", label: "韩国标准时间 (UTC+9)" },
+  { value: "Asia/Singapore", label: "新加坡标准时间 (UTC+8)" },
+  { value: "Asia/Hong_Kong", label: "香港标准时间 (UTC+8)" },
+  { value: "Asia/Taipei", label: "台北标准时间 (UTC+8)" },
+  { value: "Asia/Kolkata", label: "印度标准时间 (UTC+5:30)" },
+  { value: "Europe/London", label: "英国时间 (UTC+0/+1)" },
+  { value: "Europe/Berlin", label: "中欧时间 (UTC+1/+2)" },
+  { value: "Europe/Moscow", label: "莫斯科时间 (UTC+3)" },
+  { value: "America/New_York", label: "美国东部时间 (UTC-5/-4)" },
+  { value: "America/Chicago", label: "美国中部时间 (UTC-6/-5)" },
+  { value: "America/Los_Angeles", label: "美国太平洋时间 (UTC-8/-7)" },
+  { value: "Pacific/Auckland", label: "新西兰标准时间 (UTC+12/+13)" },
+  { value: "Australia/Sydney", label: "澳大利亚东部时间 (UTC+10/+11)" },
+  { value: "UTC", label: "协调世界时 (UTC)" },
+];
+
 function ServerSection() {
   const { config, fetchConfig, updateServerUrl, updateServerToken, testConnection, isServerConnected, connectionChecking } = useSystemStore();
   const [url, setUrl] = useState("");
   const [token, setToken] = useState("");
+  const [timezone, setTimezone] = useState("Asia/Shanghai");
   const [saved, setSaved] = useState(false);
   const [testResult, setTestResult] = useState<"idle" | "success" | "fail">("idle");
+  const [tzSynced, setTzSynced] = useState(false);
 
   useEffect(() => {
     fetchConfig();
@@ -73,6 +95,16 @@ function ServerSection() {
       setToken(config.server.token);
     }
   }, [config]);
+
+  // 从服务器加载时区
+  useEffect(() => {
+    if (!config?.server.url || !config?.server.token) return;
+    serverFetch<{ timezone: string }>("/api/v1/config/timezone")
+      .then((data) => {
+        if (data.timezone) setTimezone(data.timezone);
+      })
+      .catch(() => {});
+  }, [config?.server.url, config?.server.token]);
 
   const handleSave = async () => {
     try {
@@ -94,6 +126,20 @@ function ServerSection() {
     const ok = await testConnection();
     setTestResult(ok ? "success" : "fail");
     setTimeout(() => setTestResult("idle"), 5000);
+  };
+
+  const handleSaveTimezone = async (tz: string) => {
+    setTimezone(tz);
+    try {
+      await serverFetch("/api/v1/config/timezone", {
+        method: "PUT",
+        body: JSON.stringify({ timezone: tz }),
+      });
+      setTzSynced(true);
+      setTimeout(() => setTzSynced(false), 2000);
+    } catch (e) {
+      console.error("时区同步失败:", e);
+    }
   };
 
   return (
@@ -127,6 +173,25 @@ function ServerSection() {
         {testResult === "success" && <span className="test-result test-result--ok">✓ 连接成功</span>}
         {testResult === "fail" && <span className="test-result test-result--fail">✗ 连接失败</span>}
       </div>
+
+      <h3 className="settings-section__title" style={{ marginTop: "var(--space-lg)" }}>时区设置</h3>
+      <p className="settings-section__desc">选择所在时区，服务端将按此时区统计每小时活跃度和工作时段。</p>
+
+      <div className="form-group">
+        <label className="form-label">时区</label>
+        <select
+          className="form-input form-select"
+          value={timezone}
+          onChange={(e) => handleSaveTimezone(e.target.value)}
+        >
+          {TIMEZONES.map((tz) => (
+            <option key={tz.value} value={tz.value}>
+              {tz.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {tzSynced && <span className="test-result test-result--ok">✓ 时区已同步到服务器</span>}
     </div>
   );
 }

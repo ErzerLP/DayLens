@@ -32,6 +32,7 @@ type SecurityConfig struct {
 type ServerConfig struct {
 	Addr         string `mapstructure:"addr"`
 	InternalAddr string `mapstructure:"internal_addr"`
+	Timezone     string `mapstructure:"timezone"`
 }
 
 // AuthConfig 认证配置
@@ -91,6 +92,7 @@ func Load() *Config {
 	v.SetDefault("ai.provider", "ollama")
 	v.SetDefault("ai.endpoint", "http://localhost:11434")
 	v.SetDefault("ai.model", "qwen2.5")
+	v.SetDefault("server.timezone", "Asia/Shanghai")
 	v.SetDefault("storage.screenshot_dir", "./data/screenshots")
 	v.SetDefault("storage.retention_days", 30)
 	v.SetDefault("storage.max_storage_mb", 2048)

@@ -19,14 +19,18 @@ import (
 type PgActivityRepo struct {
 	pool   *pgxpool.Pool
 	cipher crypto.FieldCipher
+	tz     string // 时区名（如 "Asia/Shanghai"）
 }
 
 // NewPgActivityRepo 创建活动仓储
-func NewPgActivityRepo(pool *pgxpool.Pool, cipher crypto.FieldCipher) *PgActivityRepo {
+func NewPgActivityRepo(pool *pgxpool.Pool, cipher crypto.FieldCipher, timezone string) *PgActivityRepo {
 	if cipher == nil {
 		cipher = crypto.NopCipher{}
 	}
-	return &PgActivityRepo{pool: pool, cipher: cipher}
+	if timezone == "" {
+		timezone = "Asia/Shanghai"
+	}
+	return &PgActivityRepo{pool: pool, cipher: cipher, tz: timezone}
 }
 
 // encryptActivity 加密活动的敏感字段（window_title, ocr_text, browser_url）
@@ -235,15 +239,15 @@ func (r *PgActivityRepo) GetDailyStats(ctx context.Context, userID int, date str
 
 	stats := &activity.DailyStats{Date: date}
 
-	// 总时长 + 截图数 + 活跃小时 + 工作时段时长
+	// 总时长 + 截图数 + 活跃小时 + 工作时段时长（使用配置时区）
 	err = r.pool.QueryRow(ctx, `
 		SELECT COALESCE(SUM(duration), 0),
 			   COUNT(CASE WHEN screenshot_key != '' THEN 1 END),
-			   COUNT(DISTINCT EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp))),
-			   COALESCE(SUM(CASE WHEN EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp)) BETWEEN 9 AND 17 THEN duration ELSE 0 END), 0)
+			   COUNT(DISTINCT EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp) AT TIME ZONE $4)),
+			   COALESCE(SUM(CASE WHEN EXTRACT(HOUR FROM TO_TIMESTAMP(timestamp) AT TIME ZONE $4) BETWEEN 9 AND 17 THEN duration ELSE 0 END), 0)
 		FROM activities
 		WHERE user_id = $1 AND timestamp >= $2 AND timestamp < $3`,
-		userID, start, end,
+		userID, start, end, r.tz,
 	).Scan(&stats.TotalDuration, &stats.ScreenshotCount, &stats.ActiveHours, &stats.WorkTimeDuration)
 	if err != nil {
 		return nil, fmt.Errorf("stats aggregation: %w", err)

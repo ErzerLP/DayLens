@@ -61,7 +61,7 @@ func main() {
 		slog.Warn("未配置 encryption_key，敏感字段明文存储")
 	}
 
-	activityRepo := persistence.NewPgActivityRepo(pool, fieldCipher)
+	activityRepo := persistence.NewPgActivityRepo(pool, fieldCipher, cfg.Server.Timezone)
 	reportRepo := persistence.NewPgReportRepo(pool)
 	hourlyRepo := persistence.NewPgHourlyRepo(pool)
 	categoryRepo := persistence.NewPgCategoryRepo(pool)

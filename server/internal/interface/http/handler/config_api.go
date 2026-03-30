@@ -175,3 +175,29 @@ func (h *ConfigHandler) ListProviders(c *gin.Context) {
 		},
 	}))
 }
+
+// GetTimezone 获取当前时区
+func (h *ConfigHandler) GetTimezone(c *gin.Context) {
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"timezone": h.cfg.Server.Timezone,
+	}))
+}
+
+// SaveTimezone 保存时区
+func (h *ConfigHandler) SaveTimezone(c *gin.Context) {
+	var req struct {
+		Timezone string `json:"timezone" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		bindError(c)
+		return
+	}
+	// 验证时区有效性
+	if _, err := time.LoadLocation(req.Timezone); err != nil {
+		c.JSON(http.StatusOK, dto.ErrorResponse(42201, "无效的时区: "+req.Timezone))
+		return
+	}
+	h.cfg.Server.Timezone = req.Timezone
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
