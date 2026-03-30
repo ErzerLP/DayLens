@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Server, Camera, HardDrive, Save, RefreshCw } from "lucide-react";
+import { Server, Camera, HardDrive, Save, RefreshCw, Wifi } from "lucide-react";
 import { useSystemStore } from "../../stores/systemStore";
 import { formatBytes } from "../../utils/format";
 import "./Settings.css";
@@ -51,10 +51,11 @@ export default function SettingsPage() {
 // ===== 服务器设置 =====
 
 function ServerSection() {
-  const { config, fetchConfig, updateServerUrl, updateServerToken } = useSystemStore();
+  const { config, fetchConfig, updateServerUrl, updateServerToken, testConnection, isServerConnected, connectionChecking } = useSystemStore();
   const [url, setUrl] = useState("");
   const [token, setToken] = useState("");
   const [saved, setSaved] = useState(false);
+  const [testResult, setTestResult] = useState<"idle" | "success" | "fail">("idle");
 
   useEffect(() => {
     fetchConfig();
@@ -72,15 +73,33 @@ function ServerSection() {
       await updateServerUrl(url);
       await updateServerToken(token);
       setSaved(true);
+      setTestResult("idle");
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       console.error("保存失败:", e);
     }
   };
 
+  const handleTest = async () => {
+    // 先保存再测试
+    try {
+      await updateServerUrl(url);
+      await updateServerToken(token);
+    } catch {}
+    const ok = await testConnection();
+    setTestResult(ok ? "success" : "fail");
+    setTimeout(() => setTestResult("idle"), 5000);
+  };
+
   return (
     <div className="settings-section">
       <h3 className="settings-section__title">服务器连接</h3>
+
+      {/* 连接状态提示 */}
+      <div className={`connection-status ${isServerConnected ? "connection-status--ok" : "connection-status--fail"}`}>
+        <span className={`connection-status__dot ${isServerConnected ? "connection-status__dot--ok" : "connection-status__dot--fail"}`} />
+        {isServerConnected ? "已连接到服务器" : "未连接到服务器"}
+      </div>
 
       <div className="form-group">
         <label className="form-label">服务器地址</label>
@@ -88,7 +107,7 @@ function ServerSection() {
           className="form-input"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="http://localhost:8080"
+          placeholder="http://your-server:8080"
         />
       </div>
 
@@ -103,10 +122,24 @@ function ServerSection() {
         />
       </div>
 
-      <button className="btn btn--accent" onClick={handleSave}>
-        <Save size={14} />
-        {saved ? "已保存 ✓" : "保存"}
-      </button>
+      <div className="settings-section__actions">
+        <button className="btn btn--accent" onClick={handleSave}>
+          <Save size={14} />
+          {saved ? "已保存 ✓" : "保存"}
+        </button>
+
+        <button className="btn" onClick={handleTest} disabled={connectionChecking || !url}>
+          <Wifi size={14} />
+          {connectionChecking ? "测试中..." : "测试连接"}
+        </button>
+
+        {testResult === "success" && (
+          <span className="test-result test-result--ok">✓ 连接成功</span>
+        )}
+        {testResult === "fail" && (
+          <span className="test-result test-result--fail">✗ 连接失败，请检查地址和 Token</span>
+        )}
+      </div>
     </div>
   );
 }

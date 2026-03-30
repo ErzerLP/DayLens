@@ -6,7 +6,8 @@ import { CMD } from "../utils/api";
 import type { AppConfig, StorageStats } from "../types";
 
 interface SystemState {
-  isServerAvailable: boolean;
+  isServerConnected: boolean;
+  connectionChecking: boolean;
   syncQueueSize: number;
   storageStats: StorageStats | null;
   config: AppConfig | null;
@@ -19,10 +20,13 @@ interface SystemState {
   updateServerUrl: (url: string) => Promise<void>;
   updateServerToken: (token: string) => Promise<void>;
   updateCaptureInterval: (secs: number) => Promise<void>;
+  testConnection: () => Promise<boolean>;
+  checkConnection: () => Promise<void>;
 }
 
 export const useSystemStore = create<SystemState>((set) => ({
-  isServerAvailable: false,
+  isServerConnected: false,
+  connectionChecking: false,
   syncQueueSize: 0,
   storageStats: null,
   config: null,
@@ -79,5 +83,26 @@ export const useSystemStore = create<SystemState>((set) => ({
           }
         : null,
     }));
+  },
+
+  testConnection: async () => {
+    set({ connectionChecking: true });
+    try {
+      const ok = await invoke<boolean>(CMD.TEST_CONNECTION);
+      set({ isServerConnected: ok, connectionChecking: false });
+      return ok;
+    } catch {
+      set({ isServerConnected: false, connectionChecking: false });
+      return false;
+    }
+  },
+
+  checkConnection: async () => {
+    try {
+      const ok = await invoke<boolean>(CMD.TEST_CONNECTION);
+      set({ isServerConnected: ok });
+    } catch {
+      set({ isServerConnected: false });
+    }
   },
 }));

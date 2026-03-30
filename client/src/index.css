@@ -375,3 +375,56 @@ a:hover {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* --- 11. Connection Banner --- */
+.sidebar__connection-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+}
+
+.sidebar__connection-badge--warn {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+.connection-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-danger-subtle);
+  border-bottom: 1px solid hsl(0, 75%, 55%, 0.25);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+.connection-banner__btn {
+  margin-left: auto;
+  padding: var(--space-2xs) var(--space-md);
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.connection-banner__btn:hover {
+  opacity: 0.85;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}

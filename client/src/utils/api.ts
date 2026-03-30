@@ -25,6 +25,7 @@ export const CMD = {
   GET_STORAGE_STATS: "get_storage_stats",
   CLEANUP_DATA: "cleanup_data",
   GET_SYNC_QUEUE_SIZE: "get_sync_queue_size",
+  TEST_CONNECTION: "test_connection",
 } as const;
 
 // Tauri 事件名

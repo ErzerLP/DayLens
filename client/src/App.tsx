@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, NavLink, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToastProvider } from "./components/common/Toast";
 import {
@@ -9,6 +9,7 @@ import {
   Search,
   Settings,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { useSystemStore } from "./stores/systemStore";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -41,12 +42,16 @@ function SidebarNavItem({ to, icon, label }: NavItemProps) {
 }
 
 function Sidebar() {
-  const { syncQueueSize, fetchSyncQueue, fetchConfig } = useSystemStore();
+  const { syncQueueSize, fetchSyncQueue, fetchConfig, checkConnection, isServerConnected } = useSystemStore();
 
   useEffect(() => {
     fetchConfig();
     fetchSyncQueue();
-    const timer = setInterval(fetchSyncQueue, 30_000);
+    checkConnection();
+    const timer = setInterval(() => {
+      fetchSyncQueue();
+      checkConnection();
+    }, 30_000);
     return () => clearInterval(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -71,6 +76,12 @@ function Sidebar() {
       {/* 底部状态 */}
       <div className="sidebar__spacer" />
       <div className="sidebar__status">
+        {!isServerConnected && (
+          <div className="sidebar__connection-badge sidebar__connection-badge--warn">
+            <AlertTriangle size={12} />
+            未连接
+          </div>
+        )}
         {syncQueueSize > 0 && (
           <div className="sidebar__sync-badge">
             <RefreshCw size={12} className="spin" />
@@ -94,27 +105,39 @@ const PAGE_TITLES: Record<string, string> = {
 
 function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const title = PAGE_TITLES[location.pathname] ?? "DayLens";
-  const config = useSystemStore((s) => s.config);
+  const isServerConnected = useSystemStore((s) => s.isServerConnected);
 
   return (
-    <header className="app-layout__header">
-      <h1 className="header__title">{title}</h1>
-      <div className="header__spacer" />
-      <div className="header__status">
-        {config ? (
-          <>
-            <span className="header__status-dot header__status-dot--connected animate-pulse" />
-            已配置
-          </>
-        ) : (
-          <>
-            <span className="header__status-dot header__status-dot--disconnected" />
-            未连接
-          </>
-        )}
-      </div>
-    </header>
+    <>
+      <header className="app-layout__header">
+        <h1 className="header__title">{title}</h1>
+        <div className="header__spacer" />
+        <div className="header__status">
+          {isServerConnected ? (
+            <>
+              <span className="header__status-dot header__status-dot--connected animate-pulse" />
+              已连接
+            </>
+          ) : (
+            <>
+              <span className="header__status-dot header__status-dot--disconnected" />
+              未连接
+            </>
+          )}
+        </div>
+      </header>
+      {!isServerConnected && (
+        <div className="connection-banner">
+          <AlertTriangle size={14} />
+          <span>服务端未连接，数据无法同步。</span>
+          <button className="connection-banner__btn" onClick={() => navigate("/settings")}>
+            前往设置
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 

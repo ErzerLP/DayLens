@@ -61,3 +61,33 @@ pub fn get_data_dir() -> Result<String, String> {
         .join("daylens");
     Ok(base.to_string_lossy().to_string())
 }
+
+/// 测试服务端连接
+#[tauri::command]
+pub async fn test_connection(
+    state: State<'_, AppState>,
+) -> Result<bool, String> {
+    let config = state.config.get();
+    let url = &config.server.url;
+    let token = &config.server.token;
+
+    if url.is_empty() {
+        return Ok(false);
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let ping_url = format!("{}/api/v1/ping", url.trim_end_matches('/'));
+    match client
+        .get(&ping_url)
+        .bearer_auth(token)
+        .send()
+        .await
+    {
+        Ok(resp) => Ok(resp.status().is_success()),
+        Err(_) => Ok(false),
+    }
+}

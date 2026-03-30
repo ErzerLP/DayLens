@@ -122,3 +122,68 @@
   font-weight: 700;
   color: var(--color-text-primary);
 }
+
+/* 连接状态条 */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.connection-status--ok {
+  background: hsla(140, 60%, 40%, 0.12);
+  color: hsl(140, 60%, 55%);
+}
+
+.connection-status--fail {
+  background: hsla(0, 70%, 50%, 0.12);
+  color: hsl(0, 70%, 65%);
+}
+
+.connection-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.connection-status__dot--ok {
+  background: hsl(140, 60%, 55%);
+  box-shadow: 0 0 6px hsl(140, 60%, 55%);
+}
+
+.connection-status__dot--fail {
+  background: hsl(0, 70%, 55%);
+  box-shadow: 0 0 6px hsl(0, 70%, 55%);
+}
+
+/* 按钮行 */
+.settings-section__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* 测试结果反馈 */
+.test-result {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+.test-result--ok {
+  color: hsl(140, 60%, 55%);
+}
+
+.test-result--fail {
+  color: hsl(0, 70%, 65%);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}

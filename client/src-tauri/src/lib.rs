@@ -191,6 +191,10 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env_logger::Builder::from_env(
+        env_logger::Env::default().default_filter_or("info")
+    ).init();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         // 9.1 — 开机自启
@@ -286,9 +290,91 @@ pub fn run() {
             // 5. 注入全局状态
             app.manage(AppState {
                 query: query_service,
-                config: config_manager,
-                sync: sync_coordinator,
-                capture: capture_use_case,
+                config: config_manager.clone(),
+                sync: sync_coordinator.clone(),
+                capture: capture_use_case.clone(),
+            });
+
+            // 6. 启动后台采集循环
+            let capture_handle = capture_use_case.clone();
+            let config_handle = config_manager.clone();
+            let sync_handle = sync_coordinator.clone();
+            let client_id = uuid::Uuid::new_v4().to_string();
+
+            tauri::async_runtime::spawn(async move {
+                use std::collections::VecDeque;
+                use crate::application::capture::should_capture;
+
+                let mut recent_activities = VecDeque::new();
+                let mut last_window: Option<crate::domain::activity::entity::ActiveWindow> = None;
+                let mut last_capture_time = std::time::Instant::now();
+                let mut tick_count: u64 = 0;
+
+                log::info!("采集循环已启动");
+
+                loop {
+                    let config = config_handle.get();
+                    let interval = config.capture.screenshot_interval_secs;
+
+                    // 工作时间检查
+                    if !config.work_schedule.is_work_time() {
+                        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                        continue;
+                    }
+
+                    // 截屏间隔检查
+                    if !should_capture(&last_capture_time, interval) {
+                        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                        continue;
+                    }
+
+                    // 构建截图路径
+                    let data_dir = dirs::data_dir()
+                        .unwrap_or_else(|| std::path::PathBuf::from("."))
+                        .join("daylens");
+                    let screenshot_name = format!(
+                        "{}_{}.jpg",
+                        chrono::Local::now().format("%Y%m%d_%H%M%S"),
+                        tick_count
+                    );
+                    let screenshot_path = data_dir.join("screenshots").join(&screenshot_name);
+
+                    // 执行采集（catch panic 防止 Win32 调用崩溃杀死循环）
+                    let result = std::panic::AssertUnwindSafe(
+                        capture_handle.execute_once(
+                            &config,
+                            &client_id,
+                            last_window.as_ref(),
+                            &screenshot_path,
+                            &mut recent_activities,
+                        )
+                    );
+                    match futures_util::FutureExt::catch_unwind(result).await {
+                        Ok(Some(window)) => {
+                            log::info!("采集成功: {} - {}", window.app_name, window.window_title);
+                            last_window = Some(window);
+                        }
+                        Ok(None) => {
+                            log::debug!("采集跳过（空闲/锁屏/过滤）");
+                        }
+                        Err(e) => {
+                            log::error!("采集 panic: {:?}", e);
+                        }
+                    }
+
+                    last_capture_time = std::time::Instant::now();
+                    tick_count += 1;
+
+                    // 每 10 次尝试同步缓冲队列
+                    if tick_count % 10 == 0 {
+                        let synced = sync_handle.sync_once().await;
+                        if synced > 0 {
+                            log::info!("同步缓冲: {synced} 条已上报");
+                        }
+                    }
+
+                    tokio::time::sleep(tokio::time::Duration::from_secs(interval)).await;
+                }
             });
 
             log::info!("DayLens 客户端已启动");
@@ -322,6 +408,7 @@ pub fn run() {
             interface::commands::system::check_permissions,
             interface::commands::system::is_work_time,
             interface::commands::system::get_data_dir,
+            interface::commands::system::test_connection,
         ])
         .run(tauri::generate_context!())
         .expect("Tauri 应用启动失败");

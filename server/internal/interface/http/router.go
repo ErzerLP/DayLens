@@ -33,6 +33,11 @@ func NewPublicRouter(deps *RouterDeps) *gin.Engine {
 
 	v1 := r.Group("/api/v1", middleware.Auth(deps.Token))
 	{
+		// 连接测试
+		v1.GET("/ping", func(c *gin.Context) {
+			c.JSON(200, gin.H{"code": 0, "data": "pong", "message": "ok"})
+		})
+
 		// 数据上报
 		v1.POST("/activities", deps.Activity.Ingest)
 		v1.POST("/activities/batch", deps.Activity.IngestBatch)
