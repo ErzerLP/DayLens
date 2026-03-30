@@ -11,32 +11,77 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"daylens-server/internal/domain/activity"
+	"daylens-server/internal/infrastructure/crypto"
 	"daylens-server/internal/shared"
 )
 
 // PgActivityRepo 活动 PostgreSQL 仓储
 type PgActivityRepo struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	cipher crypto.FieldCipher
 }
 
 // NewPgActivityRepo 创建活动仓储
-func NewPgActivityRepo(pool *pgxpool.Pool) *PgActivityRepo {
-	return &PgActivityRepo{pool: pool}
+func NewPgActivityRepo(pool *pgxpool.Pool, cipher crypto.FieldCipher) *PgActivityRepo {
+	if cipher == nil {
+		cipher = crypto.NopCipher{}
+	}
+	return &PgActivityRepo{pool: pool, cipher: cipher}
+}
+
+// encryptActivity 加密活动的敏感字段（window_title, ocr_text, browser_url）
+func (r *PgActivityRepo) encryptActivity(a *activity.Activity) (windowTitle string, ocrText *string, browserURL *string, err error) {
+	windowTitle, err = r.cipher.Encrypt(a.WindowTitle)
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("encrypt window_title: %w", err)
+	}
+	ocrText, err = r.cipher.EncryptPtr(a.OcrText)
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("encrypt ocr_text: %w", err)
+	}
+	browserURL, err = r.cipher.EncryptPtr(a.BrowserURL)
+	if err != nil {
+		return "", nil, nil, fmt.Errorf("encrypt browser_url: %w", err)
+	}
+	return
+}
+
+// decryptActivity 解密活动的敏感字段
+func (r *PgActivityRepo) decryptActivity(a *activity.Activity) error {
+	var err error
+	a.WindowTitle, err = r.cipher.Decrypt(a.WindowTitle)
+	if err != nil {
+		return fmt.Errorf("decrypt window_title: %w", err)
+	}
+	a.OcrText, err = r.cipher.DecryptPtr(a.OcrText)
+	if err != nil {
+		return fmt.Errorf("decrypt ocr_text: %w", err)
+	}
+	a.BrowserURL, err = r.cipher.DecryptPtr(a.BrowserURL)
+	if err != nil {
+		return fmt.Errorf("decrypt browser_url: %w", err)
+	}
+	return nil
 }
 
 // Insert 插入单条活动，幂等（ON CONFLICT DO NOTHING）
 func (r *PgActivityRepo) Insert(ctx context.Context, a *activity.Activity) (int64, error) {
+	encTitle, encOcr, encURL, err := r.encryptActivity(a)
+	if err != nil {
+		return 0, fmt.Errorf("insert activity: %w", err)
+	}
+
 	var id int64
-	err := r.pool.QueryRow(ctx, `
+	err = r.pool.QueryRow(ctx, `
 		INSERT INTO activities (user_id, client_id, client_ts, timestamp, app_name, window_title,
 			screenshot_key, ocr_text, category, semantic_category, semantic_confidence,
 			duration, browser_url, executable_path, extra_json)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, '{}')
 		ON CONFLICT (user_id, client_id, client_ts) DO NOTHING
 		RETURNING id`,
-		1, a.ClientID, a.ClientTs, a.Timestamp, a.AppName, a.WindowTitle,
-		ptrStr(a.ScreenshotKey), a.OcrText, a.Category, a.SemanticCategory,
-		a.SemanticConfidence, a.Duration, a.BrowserURL, a.ExecutablePath,
+		1, a.ClientID, a.ClientTs, a.Timestamp, a.AppName, encTitle,
+		ptrStr(a.ScreenshotKey), encOcr, a.Category, a.SemanticCategory,
+		a.SemanticConfidence, a.Duration, encURL, a.ExecutablePath,
 	).Scan(&id)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -54,15 +99,19 @@ func (r *PgActivityRepo) InsertBatch(ctx context.Context, list []*activity.Activ
 	batch := &pgx.Batch{}
 
 	for _, a := range list {
+		encTitle, encOcr, encURL, err := r.encryptActivity(a)
+		if err != nil {
+			return 0, fmt.Errorf("batch encrypt: %w", err)
+		}
 		batch.Queue(`
 			INSERT INTO activities (user_id, client_id, client_ts, timestamp, app_name, window_title,
 				screenshot_key, ocr_text, category, semantic_category, semantic_confidence,
 				duration, browser_url, executable_path, extra_json)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, '{}')
 			ON CONFLICT (user_id, client_id, client_ts) DO NOTHING`,
-			1, a.ClientID, a.ClientTs, a.Timestamp, a.AppName, a.WindowTitle,
-			ptrStr(a.ScreenshotKey), a.OcrText, a.Category, a.SemanticCategory,
-			a.SemanticConfidence, a.Duration, a.BrowserURL, a.ExecutablePath,
+			1, a.ClientID, a.ClientTs, a.Timestamp, a.AppName, encTitle,
+			ptrStr(a.ScreenshotKey), encOcr, a.Category, a.SemanticCategory,
+			a.SemanticConfidence, a.Duration, encURL, a.ExecutablePath,
 		)
 	}
 
@@ -140,6 +189,10 @@ func (r *PgActivityRepo) QueryByDate(ctx context.Context, userID int, date, app,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan activity: %w", err)
 		}
+		// 解密敏感字段
+		if err := r.decryptActivity(a); err != nil {
+			return nil, 0, err
+		}
 		items = append(items, a)
 	}
 	return items, total, nil
@@ -163,6 +216,10 @@ func (r *PgActivityRepo) GetByID(ctx context.Context, id int64) (*activity.Activ
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get activity %d: %w", id, err)
+	}
+	// 解密敏感字段
+	if err := r.decryptActivity(a); err != nil {
+		return nil, err
 	}
 	return a, nil
 }
@@ -204,13 +261,13 @@ func (r *PgActivityRepo) GetDailyStats(ctx context.Context, userID int, date str
 		return nil, err
 	}
 
-	// 域名使用分布
+	// 域名使用分布（加密时无法在 SQL 层解析——降级为空）
 	stats.DomainUsage, err = r.queryDomainUsage(ctx, userID, start, end)
 	if err != nil {
 		return nil, err
 	}
 
-	// 最常用窗口标题
+	// 最常用窗口标题（加密时在应用层解密聚合）
 	stats.TopWindowTitles, err = r.queryTopTitles(ctx, userID, start, end)
 	if err != nil {
 		return nil, err
@@ -317,6 +374,8 @@ func (r *PgActivityRepo) queryTopTitles(ctx context.Context, userID int, start, 
 		if err := rows.Scan(&u.Title, &u.Duration, &u.AppName); err != nil {
 			return nil, err
 		}
+		// 解密标题
+		u.Title, _ = r.cipher.Decrypt(u.Title)
 		items = append(items, u)
 	}
 	return items, nil
@@ -364,6 +423,8 @@ func (r *PgActivityRepo) Search(ctx context.Context, userID int, query string, l
 			&item.Excerpt, &item.MatchField, &item.RelevanceScore); err != nil {
 			return nil, 0, err
 		}
+		// 解密搜索结果摘要
+		item.Excerpt, _ = r.cipher.Decrypt(item.Excerpt)
 		items = append(items, item)
 	}
 

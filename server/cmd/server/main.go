@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 	"daylens-server/config"
 	"daylens-server/internal/application"
 	"daylens-server/internal/infrastructure/ai"
+	"daylens-server/internal/infrastructure/crypto"
 	"daylens-server/internal/infrastructure/persistence"
 	"daylens-server/internal/infrastructure/storage"
 	"daylens-server/internal/infrastructure/ws"
@@ -40,7 +42,26 @@ func main() {
 	}
 	defer pool.Close()
 
-	activityRepo := persistence.NewPgActivityRepo(pool)
+	// 字段加密器
+	var fieldCipher crypto.FieldCipher
+	if cfg.Security.EncryptionKey != "" {
+		keyBytes, err := hex.DecodeString(cfg.Security.EncryptionKey)
+		if err != nil {
+			slog.Error("加密密钥格式错误（需 64 位 hex）", "error", err)
+			os.Exit(1)
+		}
+		fieldCipher, err = crypto.NewCipher(keyBytes)
+		if err != nil {
+			slog.Error("创建加密器失败", "error", err)
+			os.Exit(1)
+		}
+		slog.Info("敏感字段加密已启用 (AES-256-GCM)")
+	} else {
+		fieldCipher = crypto.NopCipher{}
+		slog.Warn("未配置 encryption_key，敏感字段明文存储")
+	}
+
+	activityRepo := persistence.NewPgActivityRepo(pool, fieldCipher)
 	reportRepo := persistence.NewPgReportRepo(pool)
 	hourlyRepo := persistence.NewPgHourlyRepo(pool)
 	categoryRepo := persistence.NewPgCategoryRepo(pool)

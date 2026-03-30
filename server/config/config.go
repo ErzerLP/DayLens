@@ -20,6 +20,12 @@ type Config struct {
 	Storage  StorageConfig  `mapstructure:"storage"`
 	Schedule ScheduleConfig `mapstructure:"work_schedule"`
 	TLS      TLSConfig      `mapstructure:"tls"`
+	Security SecurityConfig `mapstructure:"security"`
+}
+
+// SecurityConfig 安全配置
+type SecurityConfig struct {
+	EncryptionKey string `mapstructure:"encryption_key"` // 32 字节 hex，为空则不加密
 }
 
 // ServerConfig HTTP 服务配置
