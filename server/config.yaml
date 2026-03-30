@@ -13,12 +13,28 @@ database:
   max_conns: 20
   min_conns: 5
 
+# AI 配置
+# provider 支持：ollama / openai / deepseek / moonshot / siliconflow / groq / zhipu / claude / gemini
+# 选择 provider 后，endpoint 和 model 一般不用填，会使用预设值
+# 也可以填任意 OpenAI 兼容 API 的 endpoint，provider 写 "openai" 即可
 ai:
-  provider: "ollama"                  # ollama / openai / claude / gemini / deepseek
-  endpoint: "http://localhost:11434"
-  model: "qwen2.5"
+  provider: "ollama"
+  endpoint: ""                        # 留空使用预设值
+  model: ""                           # 留空使用预设值
   api_key: ""
   custom_prompt: ""
+
+# 示例：使用 DeepSeek
+# ai:
+#   provider: "deepseek"
+#   api_key: "sk-xxxx"
+
+# 示例：使用任意 OpenAI 兼容 API
+# ai:
+#   provider: "openai"
+#   endpoint: "https://your-proxy.com/v1"
+#   model: "your-model"
+#   api_key: "sk-xxxx"
 
 storage:
   screenshot_dir: "./data/screenshots"
