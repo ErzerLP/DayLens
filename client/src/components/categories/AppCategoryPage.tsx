@@ -1,6 +1,7 @@
 // 应用分类管理页面
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { CMD } from "../../utils/api";
@@ -298,13 +299,30 @@ function CategorySelector({
   onSelect,
   disabled,
 }: CategorySelectorProps) {
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const info = getCategoryInfo(current);
 
+  // 计算下拉框位置
+  useEffect(() => {
+    if (!isOpen || !btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+    });
+  }, [isOpen]);
+
+  // 点击外部关闭
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        btnRef.current && !btnRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         onToggle();
       }
     };
@@ -313,8 +331,9 @@ function CategorySelector({
   }, [isOpen, onToggle]);
 
   return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+    <>
       <button
+        ref={btnRef}
         className="category-badge"
         onClick={onToggle}
         disabled={disabled}
@@ -327,25 +346,35 @@ function CategorySelector({
         <span className="category-badge__chevron">▾</span>
       </button>
 
-      {isOpen && (
-        <div className="category-dropdown">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              className={`category-dropdown__item ${
-                cat.key === current ? "category-dropdown__item--active" : ""
-              }`}
-              onClick={() => onSelect(cat.key)}
-            >
-              <span
-                className="category-badge__dot"
-                style={{ background: cat.color }}
-              />
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {isOpen &&
+        ReactDOM.createPortal(
+          <div
+            ref={dropdownRef}
+            className="category-dropdown"
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+            }}
+          >
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                className={`category-dropdown__item ${
+                  cat.key === current ? "category-dropdown__item--active" : ""
+                }`}
+                onClick={() => onSelect(cat.key)}
+              >
+                <span
+                  className="category-badge__dot"
+                  style={{ background: cat.color }}
+                />
+                {cat.label}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }

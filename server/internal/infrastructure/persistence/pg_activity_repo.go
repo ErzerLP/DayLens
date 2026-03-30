@@ -482,13 +482,20 @@ func (r *PgActivityRepo) GetAppCategories(ctx context.Context, userID int, from,
 	toT, _ := time.Parse("2006-01-02", to)
 	toT = toT.Add(24 * time.Hour)
 
+	// 使用子查询取每个应用最近活动对应的分类，避免同应用多分类导致重复
 	rows, err := r.pool.Query(ctx, `
-		SELECT app_name, category,
-			COALESCE(SUM(duration), 0) AS total_duration,
-			MAX(timestamp) AS last_seen
-		FROM activities
-		WHERE user_id = $1 AND timestamp >= $2 AND timestamp < $3
-		GROUP BY app_name, category
+		WITH ranked AS (
+			SELECT app_name, category, duration, timestamp,
+				ROW_NUMBER() OVER (PARTITION BY app_name ORDER BY timestamp DESC) AS rn
+			FROM activities
+			WHERE user_id = $1 AND timestamp >= $2 AND timestamp < $3
+		)
+		SELECT r.app_name,
+			(SELECT category FROM ranked WHERE app_name = r.app_name AND rn = 1) AS category,
+			COALESCE(SUM(r.duration), 0) AS total_duration,
+			MAX(r.timestamp) AS last_seen
+		FROM ranked r
+		GROUP BY r.app_name
 		ORDER BY total_duration DESC`,
 		userID, fromT.Unix(), toT.Unix())
 	if err != nil {
