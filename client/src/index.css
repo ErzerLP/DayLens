@@ -1,0 +1,377 @@
+/* ===== DayLens Design System ===== */
+
+/* --- 1. CSS Custom Properties --- */
+:root {
+  /* 颜色 — 暗色主题 */
+  --color-bg-primary: hsl(220, 20%, 8%);
+  --color-bg-secondary: hsl(220, 18%, 12%);
+  --color-bg-card: hsl(220, 16%, 16%);
+  --color-bg-card-hover: hsl(220, 16%, 20%);
+  --color-bg-input: hsl(220, 18%, 14%);
+  --color-bg-sidebar: hsl(220, 22%, 10%);
+
+  --color-text-primary: hsl(0, 0%, 94%);
+  --color-text-secondary: hsl(0, 0%, 62%);
+  --color-text-tertiary: hsl(0, 0%, 42%);
+  --color-text-inverse: hsl(220, 20%, 8%);
+
+  --color-accent: hsl(210, 100%, 60%);
+  --color-accent-hover: hsl(210, 100%, 68%);
+  --color-accent-subtle: hsl(210, 100%, 60%, 0.12);
+
+  --color-success: hsl(145, 65%, 48%);
+  --color-success-subtle: hsl(145, 65%, 48%, 0.12);
+  --color-warning: hsl(38, 92%, 55%);
+  --color-warning-subtle: hsl(38, 92%, 55%, 0.12);
+  --color-danger: hsl(0, 75%, 55%);
+  --color-danger-subtle: hsl(0, 75%, 55%, 0.12);
+
+  --color-border: hsl(220, 14%, 22%);
+  --color-border-light: hsl(220, 14%, 18%);
+
+  /* 间距 */
+  --space-2xs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.3);
+  --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.3);
+  --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.4);
+
+  /* 动画 */
+  --transition-fast: 120ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 350ms ease;
+
+  /* 字体 */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.875rem;
+  --font-size-lg: 1rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* 布局 */
+  --sidebar-width: 240px;
+  --header-height: 56px;
+}
+
+/* --- 2. Reset & Base --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+  overflow: hidden;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* --- 3. Scrollbar --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220, 14%, 28%);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220, 14%, 36%);
+}
+
+/* --- 4. Layout --- */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.app-layout__sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--color-bg-sidebar);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md);
+  gap: var(--space-xs);
+  overflow-y: auto;
+}
+
+.app-layout__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-layout__header {
+  height: var(--header-height);
+  min-height: var(--header-height);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-lg);
+  gap: var(--space-md);
+}
+
+.app-layout__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+/* --- 5. Sidebar Navigation --- */
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-xs);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.sidebar__logo-icon {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--color-accent), hsl(260, 80%, 60%));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  color: white;
+  font-weight: 800;
+}
+
+.sidebar__section-title {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--space-md) var(--space-sm) var(--space-xs);
+}
+
+.sidebar__nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.sidebar__nav-item:hover {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+.sidebar__nav-item--active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.sidebar__nav-item--active:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+
+/* --- 6. Header --- */
+.header__title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.header__spacer {
+  flex: 1;
+}
+
+.header__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.header__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+}
+
+.header__status-dot--connected {
+  background: var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
+}
+
+.header__status-dot--disconnected {
+  background: var(--color-danger);
+}
+
+/* --- 7. Cards --- */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  transition: border-color var(--transition-fast);
+}
+
+.card:hover {
+  border-color: hsl(220, 14%, 28%);
+}
+
+.card__title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.card__value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.card__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+}
+
+/* --- 8. Page placeholder --- */
+.page-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--space-md);
+  color: var(--color-text-tertiary);
+}
+
+.page-placeholder__icon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.3;
+}
+
+.page-placeholder__text {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+}
+
+/* --- 9. Animations --- */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-slow) ease-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* --- 10. Sidebar Bottom Status --- */
+.sidebar__spacer {
+  flex: 1;
+}
+
+.sidebar__status {
+  padding: var(--space-xs) 0;
+}
+
+.sidebar__sync-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

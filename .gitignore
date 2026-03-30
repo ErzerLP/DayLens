@@ -1,0 +1,26 @@
+# 设计文档（不公开）
+docs/
+
+# 依赖 & 构建产物
+node_modules/
+dist/
+target/
+*.exe
+
+# 环境 & 密钥
+.env
+*.pem
+certs/
+
+# 数据
+server/data/
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

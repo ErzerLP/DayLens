@@ -1,0 +1,288 @@
+/* ===== Search & AI 样式 ===== */
+
+.search-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: var(--space-md);
+}
+
+.search-page__tabs {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+}
+
+.tab-btn--active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* 搜索面板 */
+.search-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--space-md);
+}
+
+.search-panel__input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.search-panel__icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-panel__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  outline: none;
+  padding: var(--space-xs);
+}
+
+.search-panel__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.search-result-item {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.search-result-item:hover {
+  border-color: hsl(220, 14%, 28%);
+}
+
+.search-result-item__header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-2xs);
+}
+
+.search-result-item__app {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.search-result-item__time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.search-result-item__title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.search-result-item__match {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2xs);
+  background: var(--color-warning-subtle);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.search-results__empty {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* AI 对话面板 */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-panel__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.chat-panel__welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.chat-panel__hint {
+  font-size: var(--font-size-xs);
+}
+
+.chat-bubble {
+  display: flex;
+  gap: var(--space-sm);
+  max-width: 80%;
+}
+
+.chat-bubble--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.chat-bubble--assistant {
+  align-self: flex-start;
+}
+
+.chat-bubble__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+}
+
+.chat-bubble--user .chat-bubble__avatar {
+  background: var(--color-accent);
+  color: white;
+}
+
+.chat-bubble--assistant .chat-bubble__avatar {
+  background: hsl(260, 50%, 30%);
+  color: hsl(260, 80%, 70%);
+}
+
+.chat-bubble__content {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+.chat-bubble--user .chat-bubble__content {
+  background: var(--color-accent);
+  color: white;
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.chat-bubble--assistant .chat-bubble__content {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+/* 思考动画 */
+.chat-thinking {
+  display: flex;
+  gap: 4px;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.chat-thinking span {
+  width: 6px;
+  height: 6px;
+  background: var(--color-text-tertiary);
+  border-radius: var(--radius-full);
+  animation: chat-dot 1.2s ease-in-out infinite;
+}
+
+.chat-thinking span:nth-child(2) { animation-delay: 0.2s; }
+.chat-thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes chat-dot {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* 输入栏 */
+.chat-panel__input-row {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+}
+
+.chat-panel__input {
+  flex: 1;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.chat-panel__input:focus {
+  border-color: var(--color-accent);
+}
+
+.chat-panel__input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.chat-panel__send {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.chat-panel__send:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}

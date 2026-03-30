@@ -1,0 +1,218 @@
+/* ===== Dashboard 样式 ===== */
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Hero 统计卡片 */
+.dashboard__hero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+.stat-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.stat-card:hover {
+  border-color: hsl(220, 14%, 28%);
+  transform: translateY(-2px);
+}
+
+.stat-card--accent {
+  background: linear-gradient(135deg, hsl(210, 60%, 16%), hsl(260, 40%, 16%));
+  border-color: hsl(210, 50%, 28%);
+}
+
+.stat-card__icon {
+  color: var(--color-accent);
+  margin-bottom: var(--space-xs);
+}
+
+.stat-card__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.stat-card__value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.stat-card__value--sm {
+  font-size: var(--font-size-xl);
+}
+
+/* 图表区域 */
+.dashboard__charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.dashboard__chart-card {
+  min-height: 300px;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* 环形图 */
+.donut-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donut-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+  margin-top: var(--space-sm);
+  justify-content: center;
+}
+
+.donut-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.donut-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* 热力图 */
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  padding: var(--space-md) 0;
+}
+
+.heatmap__cell {
+  aspect-ratio: 1;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: transform var(--transition-fast);
+}
+
+.heatmap__cell:hover {
+  transform: scale(1.15);
+}
+
+.heatmap__hour {
+  font-size: 10px;
+  color: hsl(0, 0%, 94%);
+  opacity: 0.7;
+}
+
+/* 应用排行 */
+.app-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.app-ranking__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.app-ranking__rank {
+  width: 28px;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+}
+
+.app-ranking__name {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--color-text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-ranking__bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.app-ranking__bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent), hsl(260, 70%, 60%));
+  border-radius: var(--radius-full);
+}
+
+.app-ranking__time {
+  width: 60px;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.app-ranking__empty {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  padding: var(--space-lg);
+  font-size: var(--font-size-sm);
+}
+
+/* 骨架屏 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-card) 25%,
+    hsl(220, 16%, 20%) 50%,
+    var(--color-bg-card) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  min-height: 100px;
+}
+
+.skeleton--lg {
+  min-height: 300px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -1,0 +1,29 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - misspell
+    - gocritic
+    - revive
+    - gosec
+    - noctx
+    - prealloc
+
+linters-settings:
+  revive:
+    rules:
+      - name: exported
+      - name: var-naming
+      - name: error-return
+      - name: error-strings
+      - name: unexported-return
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

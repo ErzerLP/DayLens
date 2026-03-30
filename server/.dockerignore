@@ -1,0 +1,13 @@
+# DayLens Server
+
+.env
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+data/
+certs/
+tmp/

@@ -1,0 +1,38 @@
+# DayLens Server 默认配置
+# 环境变量覆盖：DAYLENS_DATABASE_URL, DAYLENS_AUTH_TOKEN 等
+
+server:
+  addr: "0.0.0.0:8080"
+  internal_addr: "127.0.0.1:8081"
+
+auth:
+  token: ""                           # 留空则首次启动自动生成
+
+database:
+  url: "postgres://daylens:daylens_secret@localhost:5432/daylens?sslmode=disable"
+  max_conns: 20
+  min_conns: 5
+
+ai:
+  provider: "ollama"                  # ollama / openai / claude / gemini / deepseek
+  endpoint: "http://localhost:11434"
+  model: "qwen2.5"
+  api_key: ""
+  custom_prompt: ""
+
+storage:
+  screenshot_dir: "./data/screenshots"
+  retention_days: 30
+  max_storage_mb: 2048
+  thumbnail_width: 360
+
+work_schedule:
+  start_hour: 9
+  start_minute: 0
+  end_hour: 18
+  end_minute: 0
+
+tls:
+  enabled: false
+  cert_file: ""
+  key_file: ""

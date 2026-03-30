@@ -1,0 +1,78 @@
+[package]
+name = "daylens"
+version = "0.1.0"
+description = "DayLens — 工作活动追踪与智能分析客户端"
+authors = ["DayLens"]
+edition = "2021"
+
+[lib]
+name = "daylens_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri 核心
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+
+# 异步运行时
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 网络
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+
+# 数据库（离线缓冲）
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# 时间
+chrono = { version = "0.4", features = ["serde"] }
+
+# 日志
+log = "0.4"
+env_logger = "0.11"
+
+# 图像处理
+image = "0.25"
+
+# 工具
+uuid = { version = "1", features = ["v4"] }
+dirs = "5"
+regex = "1"
+thiserror = "1"
+once_cell = "1"
+futures-util = "0.3"
+
+# Windows 专用
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    # 窗口监控
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_UI_Accessibility",
+    "Win32_System_Com",
+    # 截屏
+    "Win32_Graphics_Gdi",
+    "Graphics_Capture",
+    "Graphics_DirectX_Direct3D11",
+    "Graphics_Imaging",
+    # OCR
+    "Media_Ocr",
+    "Globalization",
+    # 空闲检测
+    "Win32_UI_Input_KeyboardAndMouse",
+    # 锁屏
+    "Win32_System_RemoteDesktop",
+] }

@@ -1,0 +1,30 @@
+/* ===== Loading 组件 ===== */
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--color-text-tertiary);
+  padding: var(--space-2xl);
+}
+
+.loading-spinner--sm { padding: var(--space-md); }
+.loading-spinner--lg { padding: var(--space-2xl) 0; }
+
+.loading-spinner__icon {
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner__text {
+  font-size: var(--font-size-sm);
+}
+
+.inline-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}

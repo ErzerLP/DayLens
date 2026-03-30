@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  server:
+    build: .
+    ports:
+      - "8080:8080"       # 公共 API + WebSocket
+    expose:
+      - "8081"            # 内部 API（仅容器网络可达）
+    environment:
+      - DAYLENS_DATABASE_URL=postgres://daylens:daylens_secret@db:5432/daylens?sslmode=disable
+      - DAYLENS_AUTH_TOKEN=${AUTH_TOKEN:-}
+      - DAYLENS_AI_API_KEY=${AI_API_KEY:-}
+      - DAYLENS_AI_PROVIDER=${AI_PROVIDER:-ollama}
+      - DAYLENS_AI_ENDPOINT=${AI_ENDPOINT:-http://host.docker.internal:11434}
+      - DAYLENS_AI_MODEL=${AI_MODEL:-qwen2.5}
+    volumes:
+      - screenshots:/app/data/screenshots
+      - ./config.yaml:/app/config.yaml:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: daylens
+      POSTGRES_PASSWORD: daylens_secret
+      POSTGRES_DB: daylens
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/001_init.up.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U daylens -d daylens"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - screenshots:/app/data/screenshots:ro
+    depends_on:
+      - server
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  pgdata:
+  screenshots:
