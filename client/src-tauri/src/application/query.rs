@@ -102,4 +102,28 @@ impl QueryService {
     ) -> Result<CleanupResult> {
         self.data_source.cleanup_before(date).await
     }
+
+    pub async fn get_app_categories(
+        &self,
+        from: &str,
+        to: &str,
+    ) -> Result<Vec<AppCategoryInfo>> {
+        self.data_source.get_app_categories(from, to).await
+    }
+
+    pub async fn set_category_rule(
+        &self,
+        app_name: &str,
+        category: &str,
+    ) -> Result<()> {
+        self.data_source.set_category_rule(app_name, category).await
+    }
+
+    pub async fn reclassify_app(
+        &self,
+        app_name: &str,
+        new_category: &str,
+    ) -> Result<i64> {
+        self.data_source.reclassify_app(app_name, new_category).await
+    }
 }

@@ -1,17 +1,18 @@
 // 格式化工具函数
 
-/** 分钟 → "Xh Ym" */
+/** 分钟 → "X小时 Y分钟" */
 export function formatDuration(minutes: number): string {
-  if (minutes < 1) return "< 1m";
+  if (minutes < 1) return "<1分钟";
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
+  if (h === 0) return `${m}分钟`;
+  if (m === 0) return `${h}小时`;
+  return `${h}小时${m}分钟`;
 }
 
-/** 秒 → "Xh Ym Zs" */
+/** 秒 → "X小时 Y分钟" 或 "Xs" */
 export function formatSeconds(secs: number): string {
+  if (secs < 60) return `${secs}秒`;
   return formatDuration(secs / 60);
 }
 
@@ -23,13 +24,24 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-/** ISO 时间 → "HH:mm" */
-export function formatTime(iso: string): string {
+/** 时间 → "HH:mm"，支持 ISO 字符串、unix 秒、unix 毫秒 */
+export function formatTime(value: string | number): string {
   try {
-    const d = new Date(iso);
-    return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false });
+    let d: Date;
+    if (typeof value === "number") {
+      // unix 秒 vs 毫秒：小于 1e12 视为秒
+      d = new Date(value < 1e12 ? value * 1000 : value);
+    } else if (/^\d+$/.test(value)) {
+      const n = Number(value);
+      d = new Date(n < 1e12 ? n * 1000 : n);
+    } else {
+      d = new Date(value);
+    }
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
   } catch {
-    return iso;
+    return String(value);
   }
 }
 

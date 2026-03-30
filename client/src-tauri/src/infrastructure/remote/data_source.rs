@@ -65,9 +65,15 @@ impl DataSource for RemoteDataSource {
         &self,
         date: &str,
     ) -> Result<Vec<HourlySummary>> {
-        self.client.read().await.get(
-            &format!("/api/v1/stats/hourly?date={date}"),
-        ).await
+        #[derive(serde::Deserialize)]
+        struct Wrapper {
+            #[serde(default)]
+            items: Vec<HourlySummary>,
+        }
+        let wrapper: Wrapper = self.client.read().await.get(
+            &format!("/api/v1/hourly-summaries?date={date}"),
+        ).await?;
+        Ok(wrapper.items)
     }
 
     async fn get_report(
@@ -238,13 +244,21 @@ impl DataSource for RemoteDataSource {
             app_name: String,
             category: String,
         }
-        let _: serde_json::Value = self.client.read().await.put(
+        // 服务端返回 data: null，用 Option 包一层避免解析失败
+        let _: Option<serde_json::Value> = self.client.read().await.put(
             "/api/v1/apps/category-rules",
             &Req {
                 app_name: app_name.to_string(),
                 category: category.to_string(),
             },
-        ).await?;
+        ).await.or_else(|e| {
+            // 忽略 "data 为 null" 错误，因为该接口确实不返回 data
+            if format!("{e}").contains("data 为 null") {
+                Ok(None)
+            } else {
+                Err(e)
+            }
+        })?;
         Ok(())
     }
 

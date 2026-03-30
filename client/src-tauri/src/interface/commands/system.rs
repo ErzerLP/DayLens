@@ -80,7 +80,7 @@ pub async fn test_connection(
         .build()
         .map_err(|e| e.to_string())?;
 
-    let ping_url = format!("{}/api/v1/ping", url.trim_end_matches('/'));
+    let ping_url = format!("{}/api/v1/stats?date=2000-01-01", url.trim_end_matches('/'));
     match client
         .get(&ping_url)
         .bearer_auth(token)

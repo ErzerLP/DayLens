@@ -198,7 +198,7 @@ impl RemoteClient {
     ///
     /// 向服务端发送 GET `/api/v1/ping`，成功返回 `true`。
     pub async fn health_check(&self) -> bool {
-        let url = format!("{}/api/v1/ping", self.base_url);
+        let url = format!("{}/api/v1/stats?date=2000-01-01", self.base_url);
         match self
             .client
             .get(&url)

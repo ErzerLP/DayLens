@@ -19,8 +19,12 @@ pub async fn update_server_url(
 ) -> Result<(), String> {
     state
         .config
-        .update(|c| c.server.url = url)
-        .map_err(|e| e.to_string())
+        .update(|c| c.server.url = url.clone())
+        .map_err(|e| e.to_string())?;
+
+    // 同步更新 HTTP 客户端
+    state.remote_client.write().await.set_base_url(url);
+    Ok(())
 }
 
 #[tauri::command]
@@ -30,8 +34,12 @@ pub async fn update_server_token(
 ) -> Result<(), String> {
     state
         .config
-        .update(|c| c.server.token = token)
-        .map_err(|e| e.to_string())
+        .update(|c| c.server.token = token.clone())
+        .map_err(|e| e.to_string())?;
+
+    // 同步更新 HTTP 客户端
+    state.remote_client.write().await.set_token(token);
+    Ok(())
 }
 
 #[tauri::command]

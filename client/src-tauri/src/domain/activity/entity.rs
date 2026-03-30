@@ -3,13 +3,22 @@
 //! 定义活动采集、统计、应用使用等核心数据结构。
 //! 所有结构体均为纯数据，字段 `pub`，可跨层使用。
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+/// 遇到 null 时返回类型默认值（用于 Vec 等字段）
+fn null_as_default<'de, D, T>(deserializer: D) -> std::result::Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Default + Deserialize<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
+}
 
 // ===== 核心实体 =====
 
 /// 一条活动记录 — 系统采集的单次窗口活动快照
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Activity {
     /// 服务端分配的 ID（上报前为 0）
     pub id: i64,
@@ -42,8 +51,8 @@ pub struct Activity {
 }
 
 /// 每日统计 — 某天的所有汇总数据
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct DailyStats {
     /// 日期 YYYY-MM-DD
     pub date: String,
@@ -54,14 +63,18 @@ pub struct DailyStats {
     /// 活跃小时数
     pub active_hours: i32,
     /// 应用使用分布
+    #[serde(deserialize_with = "null_as_default")]
     pub app_usage: Vec<AppUsage>,
     /// 分类使用分布
+    #[serde(deserialize_with = "null_as_default")]
     pub category_usage: Vec<CategoryUsage>,
     /// 域名使用分布
+    #[serde(deserialize_with = "null_as_default")]
     pub domain_usage: Vec<DomainUsage>,
     /// 工作时间段内的总时长（秒）
     pub work_time_duration: i64,
     /// 最常用窗口标题
+    #[serde(deserialize_with = "null_as_default")]
     pub top_window_titles: Vec<WindowTitleUsage>,
 }
 
@@ -110,8 +123,8 @@ pub struct WindowTitleUsage {
 }
 
 /// 小时摘要
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct HourlySummary {
     /// 小时（0-23）
     pub hour: i32,
@@ -124,6 +137,7 @@ pub struct HourlySummary {
     /// 总活跃时长（秒）
     pub total_duration: i64,
     /// 代表性截图键列表
+    #[serde(deserialize_with = "null_as_default")]
     pub representative_screenshots: Vec<String>,
 }
 

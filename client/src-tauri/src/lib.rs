@@ -293,6 +293,7 @@ pub fn run() {
                 config: config_manager.clone(),
                 sync: sync_coordinator.clone(),
                 capture: capture_use_case.clone(),
+                remote_client: remote_client.clone(),
             });
 
             // 6. 启动后台采集循环
@@ -365,8 +366,8 @@ pub fn run() {
                     last_capture_time = std::time::Instant::now();
                     tick_count += 1;
 
-                    // 每 10 次尝试同步缓冲队列
-                    if tick_count % 10 == 0 {
+                    // 每 3 次尝试同步缓冲队列
+                    if tick_count % 3 == 0 {
                         let synced = sync_handle.sync_once().await;
                         if synced > 0 {
                             log::info!("同步缓冲: {synced} 条已上报");
@@ -387,6 +388,10 @@ pub fn run() {
             interface::commands::activity::get_timeline,
             interface::commands::activity::get_activity,
             interface::commands::activity::get_hourly_summaries,
+            // 应用分类管理
+            interface::commands::activity::get_app_categories,
+            interface::commands::activity::set_category_rule,
+            interface::commands::activity::reclassify_app,
             // 报告
             interface::commands::report::get_report,
             interface::commands::report::generate_report,

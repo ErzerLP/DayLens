@@ -26,6 +26,10 @@ export const CMD = {
   CLEANUP_DATA: "cleanup_data",
   GET_SYNC_QUEUE_SIZE: "get_sync_queue_size",
   TEST_CONNECTION: "test_connection",
+  // 应用分类
+  GET_APP_CATEGORIES: "get_app_categories",
+  SET_CATEGORY_RULE: "set_category_rule",
+  RECLASSIFY_APP: "reclassify_app",
 } as const;
 
 // Tauri 事件名

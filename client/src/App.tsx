@@ -10,6 +10,8 @@ import {
   Settings,
   RefreshCw,
   AlertTriangle,
+  ScrollText,
+  Tags,
 } from "lucide-react";
 import { useSystemStore } from "./stores/systemStore";
 import DashboardPage from "./components/dashboard/DashboardPage";
@@ -17,6 +19,8 @@ import TimelinePage from "./components/timeline/TimelinePage";
 import ReportPage from "./components/report/ReportPage";
 import SearchPage from "./components/search/SearchPage";
 import SettingsPage from "./components/settings/SettingsPage";
+import LogPage from "./components/logs/LogPage";
+import AppCategoryPage from "./components/categories/AppCategoryPage";
 import "./index.css";
 
 // ===== Sidebar =====
@@ -72,6 +76,8 @@ function Sidebar() {
 
       <div className="sidebar__section-title">系统</div>
       <SidebarNavItem to="/settings" icon={<Settings size={18} />} label="设置" />
+      <SidebarNavItem to="/categories" icon={<Tags size={18} />} label="分类管理" />
+      <SidebarNavItem to="/logs" icon={<ScrollText size={18} />} label="日志" />
 
       {/* 底部状态 */}
       <div className="sidebar__spacer" />
@@ -101,6 +107,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/report": "日报",
   "/search": "搜索 / AI",
   "/settings": "设置",
+  "/logs": "日志",
 };
 
 function Header() {
@@ -161,6 +168,8 @@ function AnimatedRoutes() {
           <Route path="/report" element={<ReportPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/logs" element={<LogPage />} />
+          <Route path="/categories" element={<AppCategoryPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

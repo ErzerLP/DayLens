@@ -75,7 +75,7 @@ func main() {
 		App:        handler.NewAppHandler(appSvc),
 		Storage:    handler.NewStorageHandler(storageSvc),
 		Screenshot: handler.NewScreenshotHandler(fileStorage),
-		Config:     handler.NewConfigHandler(),
+		Config:     handler.NewConfigHandler(cfg, nil),
 		WS:         handler.NewWSHandler(wsHub),
 		Internal:   handler.NewInternalHandler(activitySvc, reportSvc, sessionSvc, searchSvc),
 	})

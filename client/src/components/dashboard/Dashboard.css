@@ -6,6 +6,20 @@
   gap: var(--space-lg);
 }
 
+.dashboard__error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: hsl(0 75% 55% / 0.08);
+  border: 1px solid hsl(0 60% 45% / 0.3);
+  border-radius: var(--radius-md);
+  color: hsl(0, 80%, 70%);
+  font-size: var(--font-size-sm);
+  word-break: break-all;
+}
+
 /* Hero 统计卡片 */
 .dashboard__hero {
   display: grid;

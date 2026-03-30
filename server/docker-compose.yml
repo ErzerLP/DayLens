@@ -4,11 +4,11 @@ services:
     build: .
     ports:
       - "8080:8080"       # 公共 API + WebSocket
-    expose:
-      - "8081"            # 内部 API（仅容器网络可达）
+      - "127.0.0.1:8081:8081"  # 内部 API（仅宿主机 localhost 可达）
     environment:
       - DAYLENS_DATABASE_URL=postgres://daylens:daylens_secret@db:5432/daylens?sslmode=disable
       - DAYLENS_AUTH_TOKEN=${AUTH_TOKEN:-}
+      - DAYLENS_SERVER_INTERNAL_ADDR=0.0.0.0:8081
       - DAYLENS_AI_API_KEY=${AI_API_KEY:-}
       - DAYLENS_AI_PROVIDER=${AI_PROVIDER:-ollama}
       - DAYLENS_AI_ENDPOINT=${AI_ENDPOINT:-http://host.docker.internal:11434}

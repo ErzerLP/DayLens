@@ -12,7 +12,6 @@ import { useInvoke } from "../../hooks/useInvoke";
 import { CMD } from "../../utils/api";
 import {
   formatDuration,
-  formatTime,
   categoryLabel,
   categoryColor,
 } from "../../utils/format";
@@ -43,11 +42,31 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  const data = stats.data;
+  // 内联错误提示（不替换整个页面布局）
+  const dataError = stats.error || hourly.error;
+
+  const raw = stats.data;
   const hours = hourly.data ?? [];
+
+  // 服务端返回 totalDuration(秒)，前端转分钟
+  const totalMins = raw ? (raw.totalDuration != null ? raw.totalDuration / 60 : raw.totalMinutes ?? 0) : 0;
+  const apps = raw?.appUsage?.map(a => ({ appName: a.appName, minutes: a.duration / 60, count: a.count })) ?? raw?.topApps ?? [];
+  const cats = raw?.categoryUsage?.map(c => ({ category: c.category, minutes: c.duration / 60, percentage: 0 })) ?? raw?.categoryBreakdown ?? [];
+  // 计算百分比
+  const catTotal = cats.reduce((s, c) => s + c.minutes, 0) || 1;
+  const catsWithPct = cats.map(c => ({ ...c, percentage: Math.round(c.minutes / catTotal * 100) }));
+  const actCount = raw?.screenshotCount ?? raw?.totalActivities ?? apps.reduce((s, a) => s + (a.count ?? 0), 0);
 
   return (
     <div className="dashboard">
+      {dataError && (
+        <div className="dashboard__error-banner">
+          <span>⚠ 数据加载异常：{dataError}</span>
+          <button className="btn btn--sm" onClick={() => { stats.execute(); hourly.execute({ date: new Date().toISOString().slice(0, 10) }); }}>
+            重试
+          </button>
+        </div>
+      )}
       {/* Hero 数据卡片 */}
       <div className="dashboard__hero">
         <motion.div
@@ -62,7 +81,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-card__label">今日专注时间</div>
           <div className="stat-card__value">
-            {data ? formatDuration(data.totalMinutes) : "--"}
+            {raw ? formatDuration(totalMins) : "--"}
           </div>
         </motion.div>
 
@@ -78,7 +97,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-card__label">活动记录数</div>
           <div className="stat-card__value">
-            {data?.totalActivities ?? "--"}
+            {raw ? actCount : "--"}
           </div>
         </motion.div>
 
@@ -94,7 +113,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-card__label">最常用应用</div>
           <div className="stat-card__value stat-card__value--sm">
-            {data?.topApps?.[0]?.appName ?? "--"}
+            {apps[0]?.appName ?? "--"}
           </div>
         </motion.div>
 
@@ -110,9 +129,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-card__label">活跃时段</div>
           <div className="stat-card__value stat-card__value--sm">
-            {data?.firstActivity
-              ? `${formatTime(data.firstActivity)} — ${formatTime(data.lastActivity ?? "")}`
-              : "--"}
+            {raw?.activeHours ? `${raw.activeHours}小时` : "--"}
           </div>
         </motion.div>
       </div>
@@ -126,7 +143,7 @@ export default function DashboardPage() {
           transition={{ delay: 0.3, duration: 0.4 }}
         >
           <div className="card__title">分类占比</div>
-          <CategoryDonut items={data?.categoryBreakdown ?? []} />
+          <CategoryDonut items={catsWithPct} />
         </motion.div>
 
         <motion.div
@@ -149,7 +166,7 @@ export default function DashboardPage() {
       >
         <div className="card__title">应用排行</div>
         <div className="app-ranking">
-          {(data?.topApps ?? []).map((app, i) => (
+          {apps.map((app, i) => (
             <div key={app.appName} className="app-ranking__item">
               <span className="app-ranking__rank">#{i + 1}</span>
               <span className="app-ranking__name">{app.appName}</span>
@@ -158,7 +175,7 @@ export default function DashboardPage() {
                   className="app-ranking__bar-fill"
                   initial={{ width: 0 }}
                   animate={{
-                    width: `${data?.totalMinutes ? (app.minutes / data.totalMinutes) * 100 : 0}%`,
+                    width: `${totalMins ? (app.minutes / totalMins) * 100 : 0}%`,
                   }}
                   transition={{ delay: 0.6 + i * 0.05, duration: 0.6 }}
                 />
@@ -168,7 +185,7 @@ export default function DashboardPage() {
               </span>
             </div>
           ))}
-          {(data?.topApps ?? []).length === 0 && (
+          {apps.length === 0 && (
             <div className="app-ranking__empty">暂无数据</div>
           )}
         </div>
@@ -243,7 +260,7 @@ function HourlyHeatmap({ hours }: { hours: HourlySummary[] }) {
   // 补齐 24 小时
   const grid = Array.from({ length: 24 }, (_, i) => {
     const h = hours.find((x) => x.hour === i);
-    return { hour: i, minutes: h?.totalMinutes ?? 0 };
+    return { hour: i, minutes: (h?.totalDuration != null ? h.totalDuration / 60 : h?.totalMinutes) ?? 0 };
   });
 
   const maxMinutes = Math.max(...grid.map((g) => g.minutes), 1);

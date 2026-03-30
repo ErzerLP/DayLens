@@ -85,7 +85,9 @@
   gap: 2px;
 }
 
-.timeline-item {
+/* ===== 合并组 ===== */
+
+.timeline-group {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -93,31 +95,50 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--transition-fast);
+  position: relative;
 }
 
-.timeline-item:hover {
+.timeline-group:hover {
   background: var(--color-bg-card);
 }
 
-.timeline-item--selected {
+.timeline-group--selected {
   background: var(--color-accent-subtle);
   border-left: 3px solid var(--color-accent);
 }
 
-.timeline-item__time {
-  width: 50px;
+.timeline-group__time {
+  width: 52px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   font-family: var(--font-mono);
+  line-height: 1.3;
 }
 
-.timeline-item__content {
+.timeline-group__time-end {
+  opacity: 0.5;
+  font-size: 10px;
+}
+
+/* 左侧色条 */
+.timeline-group__bar {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.timeline-group__content {
   flex: 1;
   min-width: 0;
 }
 
-.timeline-item__app {
+.timeline-group__app {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
@@ -126,6 +147,90 @@
   color: var(--color-text-primary);
 }
 
+.timeline-group__count {
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: hsl(220, 14%, 18%);
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-group__duration {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  min-width: 48px;
+  text-align: right;
+}
+
+.timeline-group__expand {
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.timeline-group__expand:hover {
+  color: var(--color-text-primary);
+}
+
+/* 展开的子项 */
+.timeline-group__children {
+  overflow: hidden;
+  margin-left: 68px;
+  border-left: 1px dashed var(--color-border);
+  padding-left: var(--space-sm);
+}
+
+.timeline-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 3px var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-xs);
+}
+
+.timeline-child:hover {
+  background: hsl(220, 14%, 12%);
+}
+
+.timeline-child--selected {
+  background: var(--color-accent-subtle);
+}
+
+.timeline-child__time {
+  width: 42px;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.timeline-child__title {
+  flex: 1;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-child__duration {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+
+/* 保留旧元素兼容 */
 .timeline-item__category-dot {
   width: 6px;
   height: 6px;
@@ -144,13 +249,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.timeline-item__duration {
-  flex-shrink: 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  font-family: var(--font-mono);
 }
 
 .timeline-list__load-more {
