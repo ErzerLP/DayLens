@@ -144,6 +144,7 @@ fn ensure_data_dir() -> PathBuf {
 fn build_tray(app: &tauri::App) -> tauri::Result<()> {
     use tauri::tray::{TrayIconBuilder, MouseButton, MouseButtonState, TrayIconEvent};
     use tauri::menu::{MenuBuilder, MenuItemBuilder};
+    use tauri::image::Image;
 
     let show_item = MenuItemBuilder::with_id("show", "显示窗口").build(app)?;
     let quit_item = MenuItemBuilder::with_id("quit", "退出").build(app)?;
@@ -154,7 +155,12 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
         .item(&quit_item)
         .build()?;
 
+    // 使用 Tauri 从 tauri.conf.json 中自动内嵌的应用图标
+    let icon = app.default_window_icon().cloned()
+        .unwrap_or_else(|| Image::new_owned(vec![0; 32*32*4], 32, 32));
+
     TrayIconBuilder::new()
+        .icon(icon)
         .tooltip("DayLens — 运行中")
         .menu(&menu)
         .on_menu_event(|app, event| {

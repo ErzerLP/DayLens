@@ -67,7 +67,7 @@ impl DataSource for RemoteDataSource {
     ) -> Result<Vec<HourlySummary>> {
         #[derive(serde::Deserialize)]
         struct Wrapper {
-            #[serde(default)]
+            #[serde(default, deserialize_with = "crate::domain::activity::entity::null_as_default")]
             items: Vec<HourlySummary>,
         }
         let wrapper: Wrapper = self.client.read().await.get(

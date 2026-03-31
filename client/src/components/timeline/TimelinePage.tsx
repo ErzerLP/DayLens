@@ -96,7 +96,7 @@ export default function TimelinePage() {
       });
       if (res) {
         setActivities((prev) => (reset ? res.items : [...prev, ...res.items]));
-        setHasMore(res.hasMore);
+        setHasMore(res.hasMore ?? false);
       }
     },
     [date, activities.length, timeline],

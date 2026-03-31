@@ -6,7 +6,7 @@
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// 遇到 null 时返回类型默认值（用于 Vec 等字段）
-fn null_as_default<'de, D, T>(deserializer: D) -> std::result::Result<T, D::Error>
+pub(crate) fn null_as_default<'de, D, T>(deserializer: D) -> std::result::Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: Default + Deserialize<'de>,

@@ -13,7 +13,14 @@
 use std::path::Path;
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use crate::shared::error::{AppError, Result};
+
+/// Windows `CREATE_NO_WINDOW` 标志，防止子进程弹出控制台窗口
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // ===== 常量 =====
 
@@ -159,8 +166,11 @@ $stream.Dispose()
             path_str.replace('\\', "\\\\").replace('\'', "''"),
         );
 
-        let output = Command::new("powershell")
-            .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+        let mut cmd = Command::new("powershell");
+        cmd.args(["-NoProfile", "-NonInteractive", "-Command", &script]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd
             .output()
             .map_err(|e| AppError::Platform(format!(
                 "PowerShell 执行失败: {e}",
@@ -193,8 +203,11 @@ $stream.Dispose()
                 "图片路径包含非法字符".to_string(),
             ))?;
 
-        let output = Command::new("python")
-            .args([PADDLE_SCRIPT, path_str])
+        let mut cmd = Command::new("python");
+        cmd.args([PADDLE_SCRIPT, path_str]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd
             .output()
             .map_err(|e| AppError::Platform(format!(
                 "PaddleOCR 执行失败: {e}",
@@ -219,14 +232,16 @@ $stream.Dispose()
     /// 尝试加载 OcrEngine 类，不实际执行识别。
     fn check_windows_ocr() -> bool {
         // Windows 10 1809+ 内置 OCR，通过快速测试确认
-        let output = Command::new("powershell")
-            .args([
+        let mut cmd = Command::new("powershell");
+        cmd.args([
                 "-NoProfile",
                 "-NonInteractive",
                 "-Command",
                 "[Windows.Media.Ocr.OcrEngine, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null; Write-Output 'ok'",
-            ])
-            .output();
+            ]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd.output();
 
         match output {
             Ok(o) => {
@@ -243,9 +258,11 @@ $stream.Dispose()
     ///
     /// 尝试执行 `python -c "import paddleocr"`。
     fn check_paddle_ocr() -> bool {
-        let output = Command::new("python")
-            .args(["-c", "import paddleocr; print('ok')"])
-            .output();
+        let mut cmd = Command::new("python");
+        cmd.args(["-c", "import paddleocr; print('ok')"]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        let output = cmd.output();
 
         match output {
             Ok(o) => {
