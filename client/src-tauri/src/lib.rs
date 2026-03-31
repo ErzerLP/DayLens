@@ -414,6 +414,10 @@ pub fn run() {
             interface::commands::system::is_work_time,
             interface::commands::system::get_data_dir,
             interface::commands::system::test_connection,
+            // 开机自启
+            interface::commands::system::enable_autostart,
+            interface::commands::system::disable_autostart,
+            interface::commands::system::is_autostart_enabled,
         ])
         .run(tauri::generate_context!())
         .expect("Tauri 应用启动失败");

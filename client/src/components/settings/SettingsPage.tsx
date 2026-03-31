@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Server, Camera, HardDrive, Save, RefreshCw, Wifi, Brain, Zap, ChevronDown } from "lucide-react";
+import { Server, Camera, HardDrive, Save, RefreshCw, Wifi, Brain, Zap, ChevronDown, Power } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "../../stores/systemStore";
 import "./Settings.css";
 
@@ -515,9 +516,16 @@ function AISection() {
 function CaptureSection() {
   const { config, fetchConfig, updateCaptureInterval } = useSystemStore();
   const [interval, setInterval_] = useState(30);
+  const [autostart, setAutostart] = useState(false);
+  const [autostartLoading, setAutostartLoading] = useState(true);
 
   useEffect(() => {
     fetchConfig();
+    // 查询开机自启状态
+    invoke<boolean>("is_autostart_enabled")
+      .then(setAutostart)
+      .catch(() => setAutostart(false))
+      .finally(() => setAutostartLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -529,6 +537,20 @@ function CaptureSection() {
       await updateCaptureInterval(interval);
     } catch (e) {
       console.error("保存失败:", e);
+    }
+  };
+
+  const handleToggleAutostart = async () => {
+    try {
+      if (autostart) {
+        await invoke("disable_autostart");
+        setAutostart(false);
+      } else {
+        await invoke("enable_autostart");
+        setAutostart(true);
+      }
+    } catch (e) {
+      console.error("开机自启设置失败:", e);
     }
   };
 
@@ -550,6 +572,26 @@ function CaptureSection() {
       <button className="btn btn--accent" onClick={handleSave}>
         <Save size={14} /> 保存
       </button>
+
+      <h3 className="settings-section__title" style={{ marginTop: "var(--space-lg)" }}>系统设置</h3>
+
+      <div className="form-group autostart-row">
+        <div className="autostart-row__info">
+          <Power size={16} />
+          <div>
+            <span className="form-label" style={{ marginBottom: 0 }}>开机自启动</span>
+            <span className="form-hint">系统启动时自动运行 DayLens</span>
+          </div>
+        </div>
+        <button
+          className={`toggle-switch ${autostart ? "toggle-switch--on" : ""}`}
+          onClick={handleToggleAutostart}
+          disabled={autostartLoading}
+          aria-label="开机自启开关"
+        >
+          <span className="toggle-switch__knob" />
+        </button>
+      </div>
     </div>
   );
 }

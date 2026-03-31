@@ -1,6 +1,6 @@
 //! 系统状态命令
 
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use crate::domain::activity::entity::*;
 use crate::interface::state::AppState;
@@ -91,3 +91,29 @@ pub async fn test_connection(
         Err(_) => Ok(false),
     }
 }
+
+// ===== 开机自启 =====
+
+/// 启用开机自启
+#[tauri::command]
+pub fn enable_autostart(app: AppHandle) -> Result<bool, String> {
+    let autostart = app.state::<tauri_plugin_autostart::AutoLaunchManager>();
+    autostart.enable().map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+/// 禁用开机自启
+#[tauri::command]
+pub fn disable_autostart(app: AppHandle) -> Result<bool, String> {
+    let autostart = app.state::<tauri_plugin_autostart::AutoLaunchManager>();
+    autostart.disable().map_err(|e| e.to_string())?;
+    Ok(false)
+}
+
+/// 查询开机自启状态
+#[tauri::command]
+pub fn is_autostart_enabled(app: AppHandle) -> Result<bool, String> {
+    let autostart = app.state::<tauri_plugin_autostart::AutoLaunchManager>();
+    autostart.is_enabled().map_err(|e| e.to_string())
+}
+
