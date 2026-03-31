@@ -1,34 +1,65 @@
 /* ===== DayLens Design System ===== */
 
 /* --- 1. CSS Custom Properties --- */
+:root, .light {
+  /* 颜色 — 浅色主题 (MD3 Blue/Indigo Palette) */
+  --color-bg-primary: #FDFBFF;
+  --color-bg-secondary: #F4F3F7;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-hover: #F0F4FA;
+  --color-bg-input: #E0E2EC;
+  --color-bg-sidebar: #FDFBFF;
+
+  --color-text-primary: #1A1C1E;
+  --color-text-secondary: #43474E;
+  --color-text-tertiary: #74777F;
+  --color-text-inverse: #FFFFFF;
+
+  --color-accent: #0061A4;
+  --color-accent-hover: #004B82;
+  --color-accent-subtle: #D1E4FF;
+
+  --color-success: #146C2E;
+  --color-success-subtle: #82F79A;
+  --color-warning: #7D5700;
+  --color-warning-subtle: #FFDE9C;
+  --color-danger: #BA1A1A;
+  --color-danger-subtle: #FFDAD6;
+
+  --color-border: #C3C6CF;
+  --color-border-light: #E0E2EC;
+}
+
+.dark {
+  /* 颜色 — 暗色主题 (MD3) */
+  --color-bg-primary: #1A1C1E;
+  --color-bg-secondary: #121316;
+  --color-bg-card: #202429;
+  --color-bg-card-hover: #2A2F35;
+  --color-bg-input: #43474E;
+  --color-bg-sidebar: #121316;
+
+  --color-text-primary: #E2E2E6;
+  --color-text-secondary: #C3C6CF;
+  --color-text-tertiary: #8E9099;
+  --color-text-inverse: #1A1C1E;
+
+  --color-accent: #9ECAFF;
+  --color-accent-hover: #BBD9FF;
+  --color-accent-subtle: #004B82;
+
+  --color-success: #65DF7F;
+  --color-success-subtle: #00531E;
+  --color-warning: #FABD00;
+  --color-warning-subtle: #5C4000;
+  --color-danger: #FFB4AB;
+  --color-danger-subtle: #93000A;
+
+  --color-border: #43474E;
+  --color-border-light: #2E3136;
+}
+
 :root {
-  /* 颜色 — 暗色主题 */
-  --color-bg-primary: hsl(220, 20%, 8%);
-  --color-bg-secondary: hsl(220, 18%, 12%);
-  --color-bg-card: hsl(220, 16%, 16%);
-  --color-bg-card-hover: hsl(220, 16%, 20%);
-  --color-bg-input: hsl(220, 18%, 14%);
-  --color-bg-sidebar: hsl(220, 22%, 10%);
-
-  --color-text-primary: hsl(0, 0%, 94%);
-  --color-text-secondary: hsl(0, 0%, 62%);
-  --color-text-tertiary: hsl(0, 0%, 42%);
-  --color-text-inverse: hsl(220, 20%, 8%);
-
-  --color-accent: hsl(210, 100%, 60%);
-  --color-accent-hover: hsl(210, 100%, 68%);
-  --color-accent-subtle: hsl(210, 100%, 60%, 0.12);
-
-  --color-success: hsl(145, 65%, 48%);
-  --color-success-subtle: hsl(145, 65%, 48%, 0.12);
-  --color-warning: hsl(38, 92%, 55%);
-  --color-warning-subtle: hsl(38, 92%, 55%, 0.12);
-  --color-danger: hsl(0, 75%, 55%);
-  --color-danger-subtle: hsl(0, 75%, 55%, 0.12);
-
-  --color-border: hsl(220, 14%, 22%);
-  --color-border-light: hsl(220, 14%, 18%);
-
   /* 间距 */
   --space-2xs: 2px;
   --space-xs: 4px;
@@ -38,10 +69,10 @@
   --space-xl: 32px;
   --space-2xl: 48px;
 
-  /* 圆角 */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  /* 图形/圆角规范 (MD3 推崇完全圆角或更大的圆角) */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-full: 9999px;
 
   /* 阴影 */
@@ -121,12 +152,12 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(220, 14%, 28%);
+  background: var(--color-border);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(220, 14%, 36%);
+  background: var(--color-text-tertiary);
 }
 
 /* --- 4. Layout --- */
@@ -189,7 +220,7 @@ a:hover {
 .sidebar__logo-icon {
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, var(--color-accent), hsl(260, 80%, 60%));
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -282,7 +313,7 @@ a:hover {
 }
 
 .card:hover {
-  border-color: hsl(220, 14%, 28%);
+  border-color: var(--color-accent);
 }
 
 .card__title {
@@ -399,7 +430,7 @@ a:hover {
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   background: var(--color-danger-subtle);
-  border-bottom: 1px solid hsl(0, 75%, 55%, 0.25);
+  border-bottom: 1px solid var(--color-danger);
   color: var(--color-danger);
   font-size: var(--font-size-sm);
   font-weight: 500;
@@ -427,4 +458,23 @@ a:hover {
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-100%); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 7. Page Lazy-load Placeholder --- */
+.page-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-md);
+}
+
+.animate-fade-in {
+  animation: fadeInGentle 0.3s ease;
+}
+
+@keyframes fadeInGentle {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }

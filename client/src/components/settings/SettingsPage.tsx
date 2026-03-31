@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Server, Camera, HardDrive, Save, RefreshCw, Wifi, Brain, Zap, ChevronDown, Power } from "lucide-react";
+import { Server, Camera, HardDrive, Save, RefreshCw, Wifi, Brain, Zap, ChevronDown, Power, Monitor, Moon, Sun } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "../../stores/systemStore";
+import { useThemeStore } from "../../stores/themeStore";
 import "./Settings.css";
 
-type Section = "server" | "capture" | "storage" | "ai";
+type Section = "server" | "capture" | "storage" | "ai" | "appearance";
 
 export default function SettingsPage() {
   const [section, setSection] = useState<Section>("server");
@@ -37,6 +38,12 @@ export default function SettingsPage() {
         >
           <HardDrive size={16} /> 存储管理
         </button>
+        <button
+          className={`settings-nav-item ${section === "appearance" ? "settings-nav-item--active" : ""}`}
+          onClick={() => setSection("appearance")}
+        >
+          <Monitor size={16} /> 外观
+        </button>
       </div>
 
       <motion.div
@@ -50,6 +57,7 @@ export default function SettingsPage() {
         {section === "ai" && <AISection />}
         {section === "capture" && <CaptureSection />}
         {section === "storage" && <StorageSection />}
+        {section === "appearance" && <AppearanceSection />}
       </motion.div>
     </div>
   );
@@ -665,6 +673,45 @@ function StorageSection() {
       <button className="btn" onClick={fetchStorageStats}>
         <RefreshCw size={14} /> 刷新
       </button>
+    </div>
+  );
+}
+
+// ===== 外观设置 =====
+
+function AppearanceSection() {
+  const { theme, setTheme } = useThemeStore();
+
+  return (
+    <div className="settings-section">
+      <h3 className="settings-section__title">主题外观</h3>
+      <p className="settings-section__desc">配置 DayLens 客户端的主题模式，修改后立即生效。</p>
+
+      <div className="theme-selector">
+        <button
+          className={`theme-card ${theme === "light" ? "theme-card--active" : ""}`}
+          onClick={() => setTheme("light")}
+        >
+          <Sun size={24} className="theme-card__icon" />
+          <span>浅色</span>
+        </button>
+
+        <button
+          className={`theme-card ${theme === "dark" ? "theme-card--active" : ""}`}
+          onClick={() => setTheme("dark")}
+        >
+          <Moon size={24} className="theme-card__icon" />
+          <span>深色</span>
+        </button>
+
+        <button
+          className={`theme-card ${theme === "system" ? "theme-card--active" : ""}`}
+          onClick={() => setTheme("system")}
+        >
+          <Monitor size={24} className="theme-card__icon" />
+          <span>跟随系统</span>
+        </button>
+      </div>
     </div>
   );
 }

@@ -54,7 +54,7 @@
 .icon-btn:hover:not(:disabled) {
   background: var(--color-bg-card);
   color: var(--color-text-primary);
-  border-color: hsl(220, 14%, 28%);
+  border-color: var(--color-accent);
 }
 
 .icon-btn:disabled {
@@ -151,7 +151,7 @@
   font-size: 10px;
   padding: 0 5px;
   border-radius: var(--radius-full);
-  background: hsl(220, 14%, 18%);
+  background: var(--color-bg-input);
   color: var(--color-text-tertiary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -202,7 +202,7 @@
 }
 
 .timeline-child:hover {
-  background: hsl(220, 14%, 12%);
+  background: var(--color-bg-card-hover);
 }
 
 .timeline-child--selected {

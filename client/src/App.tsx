@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToastProvider } from "./components/common/Toast";
@@ -14,14 +14,28 @@ import {
   Tags,
 } from "lucide-react";
 import { useSystemStore } from "./stores/systemStore";
-import DashboardPage from "./components/dashboard/DashboardPage";
-import TimelinePage from "./components/timeline/TimelinePage";
-import ReportPage from "./components/report/ReportPage";
-import SearchPage from "./components/search/SearchPage";
-import SettingsPage from "./components/settings/SettingsPage";
-import LogPage from "./components/logs/LogPage";
-import AppCategoryPage from "./components/categories/AppCategoryPage";
+import { useThemeStore, syncThemeToDom, setupSystemThemeListener } from "./stores/themeStore";
 import "./index.css";
+
+// ===== 路由级懒加载 =====
+
+const DashboardPage = lazy(() => import("./components/dashboard/DashboardPage"));
+const TimelinePage = lazy(() => import("./components/timeline/TimelinePage"));
+const ReportPage = lazy(() => import("./components/report/ReportPage"));
+const SearchPage = lazy(() => import("./components/search/SearchPage"));
+const SettingsPage = lazy(() => import("./components/settings/SettingsPage"));
+const LogPage = lazy(() => import("./components/logs/LogPage"));
+const AppCategoryPage = lazy(() => import("./components/categories/AppCategoryPage"));
+
+// ===== 页面加载占位 =====
+
+function PageSkeleton() {
+  return (
+    <div className="page-placeholder animate-fade-in">
+      <div className="page-placeholder__text">加载中…</div>
+    </div>
+  );
+}
 
 // ===== Sidebar =====
 
@@ -46,9 +60,13 @@ function SidebarNavItem({ to, icon, label }: NavItemProps) {
 }
 
 function Sidebar() {
-  const { syncQueueSize, fetchSyncQueue, fetchConfig, checkConnection, isServerConnected } = useSystemStore();
+  // 细粒度订阅 — 只订阅需要渲染的数据字段
+  const syncQueueSize = useSystemStore((s) => s.syncQueueSize);
+  const isServerConnected = useSystemStore((s) => s.isServerConnected);
 
   useEffect(() => {
+    // 方法引用是稳定的，直接从 store 获取
+    const { fetchConfig, fetchSyncQueue, checkConnection } = useSystemStore.getState();
     fetchConfig();
     fetchSyncQueue();
     checkConnection();
@@ -57,7 +75,7 @@ function Sidebar() {
       checkConnection();
     }, 30_000);
     return () => clearInterval(timer);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <aside className="app-layout__sidebar">
@@ -150,27 +168,41 @@ function Header() {
 
 // ===== 路由动画包装 =====
 
+// Material Design 3 动效缓动函数
+const MD3_EASING: [number, number, number, number] = [0.2, 0, 0, 1]; // Standard / Decelerate
+
 function AnimatedRoutes() {
   const location = useLocation();
+
+  // MD3 Fade Through (淡入穿透)
+  const fadeThroughVariants = {
+    initial: { opacity: 0, scale: 0.97, y: 4 },
+    animate: { opacity: 1, scale: 1, y: 0 },
+    exit: { opacity: 0, scale: 1.02, y: -4 },
+  };
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.2 }}
-        style={{ height: "100%" }}
+        variants={fadeThroughVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ duration: 0.25, ease: MD3_EASING }}
+        style={{ height: "100%", width: "100%", display: "flex", flexDirection: "column" }}
       >
-        <Routes location={location}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/timeline" element={<TimelinePage />} />
-          <Route path="/report" element={<ReportPage />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/logs" element={<LogPage />} />
-          <Route path="/categories" element={<AppCategoryPage />} />
-        </Routes>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes location={location}>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/timeline" element={<TimelinePage />} />
+            <Route path="/report" element={<ReportPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/logs" element={<LogPage />} />
+            <Route path="/categories" element={<AppCategoryPage />} />
+          </Routes>
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );
@@ -179,6 +211,14 @@ function AnimatedRoutes() {
 // ===== 根组件 =====
 
 export default function App() {
+  const theme = useThemeStore((s) => s.theme);
+
+  useEffect(() => {
+    syncThemeToDom(theme);
+    const cleanup = setupSystemThemeListener();
+    return cleanup;
+  }, [theme]);
+
   return (
     <ToastProvider>
       <BrowserRouter>

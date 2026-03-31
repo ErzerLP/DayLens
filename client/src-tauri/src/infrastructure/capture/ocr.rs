@@ -33,6 +33,7 @@ const MAX_OCR_TEXT_LENGTH: usize = 5000;
 // ===== OcrService =====
 
 /// OCR 文字识别服务
+#[derive(Clone)]
 pub struct OcrService {
     /// PaddleOCR Python 是否可用
     paddle_available: bool,

@@ -88,12 +88,12 @@
   padding: var(--space-sm) var(--space-md);
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
-  border-bottom: 1px solid hsl(220, 14%, 14%);
+  border-bottom: 1px solid var(--color-border-light);
   vertical-align: middle;
 }
 
 .app-category__table tr:hover td {
-  background: hsl(220, 14%, 12%);
+  background: var(--color-bg-card-hover);
 }
 
 .app-category__app-name {
@@ -107,7 +107,7 @@
   font-size: 10px;
   padding: 1px 5px;
   border-radius: var(--radius-sm);
-  background: hsl(210, 60%, 20%);
+  background: var(--color-accent-subtle);
   color: var(--color-accent);
   font-weight: 500;
 }
@@ -124,14 +124,14 @@
   cursor: pointer;
   border: 1px solid transparent;
   transition: all var(--transition-fast);
-  background: hsl(220, 14%, 14%);
+  background: var(--color-bg-input);
   color: var(--color-text-secondary);
   position: relative;
 }
 
 .category-badge:hover {
   border-color: var(--color-border);
-  background: hsl(220, 14%, 18%);
+  background: var(--color-bg-card-hover);
 }
 
 .category-badge__dot {
@@ -153,7 +153,7 @@
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.4);
+  box-shadow: var(--shadow-lg);
   padding: var(--space-xs);
   display: flex;
   flex-direction: column;
@@ -177,7 +177,7 @@
 }
 
 .category-dropdown__item:hover {
-  background: hsl(220, 14%, 18%);
+  background: var(--color-bg-card-hover);
   color: var(--color-text-primary);
 }
 
@@ -241,8 +241,8 @@
   justify-content: space-between;
   gap: var(--space-md);
   padding: var(--space-sm) var(--space-md);
-  background: hsl(210 60% 50% / 0.08);
-  border: 1px solid hsl(210 60% 50% / 0.25);
+  background: var(--color-accent-subtle);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
   color: var(--color-accent);
   font-size: var(--font-size-sm);
@@ -252,7 +252,7 @@
   display: inline-block;
   margin-left: var(--space-sm);
   padding: 1px 6px;
-  background: hsl(210 60% 50% / 0.12);
+  background: var(--color-bg-input);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
@@ -292,7 +292,7 @@
 
 /* 行高亮 */
 .app-category__row--pending td {
-  background: hsl(210 60% 50% / 0.04) !important;
+  background: var(--color-bg-card-hover) !important;
 }
 
 /* 状态标签 */
@@ -303,7 +303,7 @@
 }
 
 .app-category__saved-label {
-  color: hsl(145, 65%, 48%);
+  color: var(--color-success);
   font-size: var(--font-size-xs);
   font-weight: 500;
 }

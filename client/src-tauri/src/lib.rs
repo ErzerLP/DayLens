@@ -63,13 +63,17 @@ impl application::ports::WindowMonitor for WindowMonitorAdapter {
     }
 }
 
-/// 截屏适配器 (sync → async trait)
+/// 截屏适配器 (sync → async trait via spawn_blocking)
 struct ScreenCaptureAdapter(ScreenshotService);
 
 #[async_trait::async_trait]
 impl application::ports::ScreenCapture for ScreenCaptureAdapter {
     async fn capture(&self, save_path: &std::path::Path) -> shared::error::Result<()> {
-        self.0.capture(save_path)
+        let svc = self.0.clone();
+        let path = save_path.to_path_buf();
+        tokio::task::spawn_blocking(move || svc.capture(&path))
+            .await
+            .map_err(|e| shared::error::AppError::Platform(format!("截屏任务异常: {e}")))?
     }
     fn generate_thumbnail(
         &self,
@@ -81,13 +85,17 @@ impl application::ports::ScreenCapture for ScreenCaptureAdapter {
     }
 }
 
-/// OCR 适配器 (sync → async trait)
+/// OCR 适配器 (sync → async trait via spawn_blocking)
 struct OcrAdapter(OcrService);
 
 #[async_trait::async_trait]
 impl application::ports::OcrEngine for OcrAdapter {
     async fn recognize(&self, image_path: &std::path::Path) -> shared::error::Result<String> {
-        self.0.recognize(image_path)
+        let ocr = self.0.clone();
+        let path = image_path.to_path_buf();
+        tokio::task::spawn_blocking(move || ocr.recognize(&path))
+            .await
+            .map_err(|e| shared::error::AppError::Platform(format!("OCR 任务异常: {e}")))?
     }
     fn is_available(&self) -> bool {
         self.0.is_available()

@@ -38,6 +38,7 @@ const DEFAULT_THUMBNAIL_WIDTH: u32 = 360;
 // ===== ScreenshotService =====
 
 /// GDI 截屏服务
+#[derive(Clone, Copy)]
 pub struct ScreenshotService;
 
 impl ScreenshotService {

@@ -93,7 +93,7 @@
 }
 
 .search-result-item:hover {
-  border-color: hsl(220, 14%, 28%);
+  border-color: var(--color-accent);
 }
 
 .search-result-item__header {
@@ -200,8 +200,8 @@
 }
 
 .chat-bubble--assistant .chat-bubble__avatar {
-  background: hsl(260, 50%, 30%);
-  color: hsl(260, 80%, 70%);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
 }
 
 .chat-bubble__content {

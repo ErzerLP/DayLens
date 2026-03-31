@@ -231,10 +231,10 @@ function CategoryDonut({
           </Pie>
           <Tooltip
             contentStyle={{
-              background: "hsl(220, 18%, 16%)",
-              border: "1px solid hsl(220, 14%, 26%)",
-              borderRadius: "8px",
-              color: "hsl(0, 0%, 94%)",
+              background: "var(--color-bg-card)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              color: "var(--color-text-primary)",
               fontSize: "13px",
             }}
             formatter={(value: any) => [`${formatDuration(Number(value))}`, "时长"]}

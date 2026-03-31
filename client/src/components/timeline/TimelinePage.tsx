@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Image, X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useInvoke } from "../../hooks/useInvoke";
 import { CMD } from "../../utils/api";
 import { formatTime, formatSeconds, categoryLabel, categoryColor, today } from "../../utils/format";
@@ -83,23 +84,25 @@ export default function TimelinePage() {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const timeline = useInvoke<TimelineResponse>(CMD.GET_TIMELINE);
+  const offsetRef = useRef(0);
 
   const loadPage = useCallback(
     async (reset = false) => {
-      const offset = reset ? 0 : activities.length;
+      if (reset) offsetRef.current = 0;
       const res = await timeline.execute({
         date,
         limit: PAGE_SIZE,
-        offset,
+        offset: offsetRef.current,
         app: null,
         category: null,
       });
       if (res) {
         setActivities((prev) => (reset ? res.items : [...prev, ...res.items]));
+        offsetRef.current += res.items.length;
         setHasMore(res.hasMore ?? false);
       }
     },
-    [date, activities.length, timeline],
+    [date], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   useEffect(() => {
@@ -166,109 +169,20 @@ export default function TimelinePage() {
       </div>
 
       <div className="timeline-page__body">
-        {/* 左侧列表 */}
-        <div className="timeline-list">
-          {groups.map((group) => (
-            <div key={group.key}>
-              <motion.div
-                className={`timeline-group ${selectedGroupKey === group.key ? "timeline-group--selected" : ""}`}
-                onClick={() => handleGroupClick(group)}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="timeline-group__time">
-                  <span>{formatTime(group.startTime)}</span>
-                  <span className="timeline-group__time-end">{formatTime(group.endTime)}</span>
-                </div>
-                <div className="timeline-group__bar" style={{ background: categoryColor(group.category) }} />
-                <div className="timeline-group__content">
-                  <div className="timeline-group__app">
-                    <span
-                      className="timeline-item__category-dot"
-                      style={{ background: categoryColor(group.category) }}
-                    />
-                    {group.appName}
-                    {group.hasScreenshot && (
-                      <Image size={12} className="timeline-item__screenshot-icon" />
-                    )}
-                    {group.activities.length > 1 && (
-                      <span className="timeline-group__count">
-                        ×{group.activities.length}
-                      </span>
-                    )}
-                  </div>
-                  <div className="timeline-item__title">{group.mainTitle}</div>
-                </div>
-                <div className="timeline-group__duration">
-                  {formatSeconds(group.totalDuration)}
-                </div>
-                {group.activities.length > 1 && (
-                  <button
-                    className="timeline-group__expand"
-                    onClick={(e) => toggleExpand(group.key, e)}
-                    title="展开详情"
-                  >
-                    <ChevronDown
-                      size={14}
-                      style={{
-                        transform: expandedGroup === group.key ? "rotate(180deg)" : "rotate(0)",
-                        transition: "transform 0.2s",
-                      }}
-                    />
-                  </button>
-                )}
-              </motion.div>
-
-              {/* 展开详情 */}
-              <AnimatePresence>
-                {expandedGroup === group.key && (
-                  <motion.div
-                    className="timeline-group__children"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {group.activities.map((act) => (
-                      <div
-                        key={act.id}
-                        className={`timeline-child ${selectedActivity?.id === act.id ? "timeline-child--selected" : ""}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedGroupKey(group.key);
-                          setSelectedActivity(act);
-                        }}
-                      >
-                        <div className="timeline-child__time">
-                          {formatTime(act.timestamp ?? act.startedAt)}
-                        </div>
-                        <div className="timeline-child__title">{act.windowTitle}</div>
-                        <div className="timeline-child__duration">
-                          {formatSeconds(act.duration ?? act.durationSecs ?? 0)}
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
-
-          {hasMore && (
-            <button
-              className="timeline-list__load-more"
-              onClick={() => loadPage(false)}
-              disabled={timeline.loading}
-            >
-              {timeline.loading ? "加载中…" : "加载更多"}
-            </button>
-          )}
-
-          {!timeline.loading && activities.length === 0 && (
-            <div className="timeline-list__empty">当天暂无活动记录</div>
-          )}
-        </div>
+        {/* 左侧列表 — 虚拟化 */}
+        <VirtualTimelineList
+          groups={groups}
+          selectedGroupKey={selectedGroupKey}
+          expandedGroup={expandedGroup}
+          selectedActivity={selectedActivity}
+          onGroupClick={handleGroupClick}
+          onToggleExpand={toggleExpand}
+          onSelectActivity={(group, act) => { setSelectedGroupKey(group.key); setSelectedActivity(act); }}
+          hasMore={hasMore}
+          loading={timeline.loading}
+          onLoadMore={() => loadPage(false)}
+          isEmpty={!timeline.loading && activities.length === 0}
+        />
 
         {/* 右侧检查器 */}
         <AnimatePresence>
@@ -334,6 +248,214 @@ export default function TimelinePage() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// ===== 虚拟化时间线列表 =====
+
+interface VirtualTimelineListProps {
+  groups: ActivityGroup[];
+  selectedGroupKey: string | null;
+  expandedGroup: string | null;
+  selectedActivity: Activity | null;
+  onGroupClick: (group: ActivityGroup) => void;
+  onToggleExpand: (key: string, e: React.MouseEvent) => void;
+  onSelectActivity: (group: ActivityGroup, act: Activity) => void;
+  hasMore: boolean;
+  loading: boolean;
+  onLoadMore: () => void;
+  isEmpty: boolean;
+}
+
+function VirtualTimelineList({
+  groups,
+  selectedGroupKey,
+  expandedGroup,
+  selectedActivity,
+  onGroupClick,
+  onToggleExpand,
+  onSelectActivity,
+  hasMore,
+  loading,
+  onLoadMore,
+  isEmpty,
+}: VirtualTimelineListProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  // 虚拟行数 = groups + 可能的 "加载更多" 按钮行 + 可能的空状态行
+  const itemCount = groups.length + (hasMore ? 1 : 0) + (isEmpty ? 1 : 0);
+
+  const virtualizer = useVirtualizer({
+    count: itemCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => {
+      if (index >= groups.length) return 48; // 加载更多/空状态
+      const group = groups[index];
+      let height = 64; // 基础 group 高度
+      if (expandedGroup === group.key) {
+        height += group.activities.length * 36; // 每条子活动约 36px
+      }
+      return height;
+    },
+    overscan: 8,
+  });
+
+  // 当展开状态变更时重新测量
+  useEffect(() => {
+    virtualizer.measure();
+  }, [expandedGroup]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div ref={parentRef} className="timeline-list" style={{ overflow: "auto" }}>
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const index = virtualRow.index;
+
+          // 末尾的 "加载更多" 按钮
+          if (index === groups.length && hasMore) {
+            return (
+              <div
+                key="load-more"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <button
+                  className="timeline-list__load-more"
+                  onClick={onLoadMore}
+                  disabled={loading}
+                >
+                  {loading ? "加载中…" : "加载更多"}
+                </button>
+              </div>
+            );
+          }
+
+          // 空状态
+          if (index >= groups.length) {
+            return isEmpty ? (
+              <div
+                key="empty"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="timeline-list__empty">当天暂无活动记录</div>
+              </div>
+            ) : null;
+          }
+
+          const group = groups[index];
+          return (
+            <div
+              key={group.key}
+              data-index={index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <div
+                className={`timeline-group ${selectedGroupKey === group.key ? "timeline-group--selected" : ""}`}
+                onClick={() => onGroupClick(group)}
+              >
+                <div className="timeline-group__time">
+                  <span>{formatTime(group.startTime)}</span>
+                  <span className="timeline-group__time-end">{formatTime(group.endTime)}</span>
+                </div>
+                <div className="timeline-group__bar" style={{ background: categoryColor(group.category) }} />
+                <div className="timeline-group__content">
+                  <div className="timeline-group__app">
+                    <span
+                      className="timeline-item__category-dot"
+                      style={{ background: categoryColor(group.category) }}
+                    />
+                    {group.appName}
+                    {group.hasScreenshot && (
+                      <Image size={12} className="timeline-item__screenshot-icon" />
+                    )}
+                    {group.activities.length > 1 && (
+                      <span className="timeline-group__count">
+                        ×{group.activities.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="timeline-item__title">{group.mainTitle}</div>
+                </div>
+                <div className="timeline-group__duration">
+                  {formatSeconds(group.totalDuration)}
+                </div>
+                {group.activities.length > 1 && (
+                  <button
+                    className="timeline-group__expand"
+                    onClick={(e) => onToggleExpand(group.key, e)}
+                    title="展开详情"
+                  >
+                    <ChevronDown
+                      size={14}
+                      style={{
+                        transform: expandedGroup === group.key ? "rotate(180deg)" : "rotate(0)",
+                        transition: "transform 0.2s",
+                      }}
+                    />
+                  </button>
+                )}
+              </div>
+
+              {/* 展开详情 */}
+              <AnimatePresence>
+                {expandedGroup === group.key && (
+                  <motion.div
+                    className="timeline-group__children"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {group.activities.map((act) => (
+                      <div
+                        key={act.id}
+                        className={`timeline-child ${selectedActivity?.id === act.id ? "timeline-child--selected" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectActivity(group, act);
+                        }}
+                      >
+                        <div className="timeline-child__time">
+                          {formatTime(act.timestamp ?? act.startedAt)}
+                        </div>
+                        <div className="timeline-child__title">{act.windowTitle}</div>
+                        <div className="timeline-child__duration">
+                          {formatSeconds(act.duration ?? act.durationSecs ?? 0)}
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
