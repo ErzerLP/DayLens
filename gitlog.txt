@@ -1,0 +1,8 @@
+49c9fd7 feat: DayLens 鍏ㄦ爤鍒濆鍖?鈥?Tauri 瀹㈡埛绔?+ Go 鏈嶅姟绔?bdeb0ca feat: AI 澶?provider 棰勮 鈥?鏀寔 DeepSeek/Moonshot/SiliconFlow/Groq/鏅鸿氨锛孫llama 鍙屾ā寮?9f7c133 fix: go.mod 闄嶇骇鍒?1.24 鍏煎 Docker golang:1.24-alpine
+855bb9f fix: go.mod 1.25.5 + Dockerfile golang:1.25-alpine 鍖归厤瀹夸富鏈虹増鏈?f162256 feat: 娴嬭瘯杩炴帴鎸夐挳 + 鏂繛閱掔洰鎻愰啋锛堥《閮?Banner + 渚ф爮寰芥爣锛?46a32a8 feat: AI閰嶇疆銆佹椂闂寸嚎鍚堝苟銆佸垎绫荤鐞嗐€丏ocker淇
+88c060f feat: intelligence闆嗘垚銆丄I宸ュ叿璋冪敤銆佹埅鍥炬竻鐞?d45d4a5 feat: AES-256-GCM鏁忔劅瀛楁鍔犲瘑
+4194f29 fix: 鍒嗙被绠＄悊閲嶅搴旂敤鍜屼笅鎷夋閿欎綅
+fe451aa feat: 鏃跺尯閰嶇疆(瀹㈡埛绔€夋嫨+鏈嶅姟绔簲鐢?
+19b3a2b 鍥炬爣鏇存柊
+33ffd3c 
+e941374 
