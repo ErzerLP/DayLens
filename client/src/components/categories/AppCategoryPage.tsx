@@ -6,7 +6,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { motion, AnimatePresence } from "framer-motion";
 import { CMD } from "../../utils/api";
 import { AppCategoryInfo, CATEGORIES, getCategoryInfo } from "../../types";
-import { formatDuration } from "../../utils/format";
+import { formatSeconds } from "../../utils/format";
+import { useLogStore } from "../../stores/logStore";
 import "./AppCategory.css";
 
 type FilterMode = "all" | "other" | "custom";
@@ -34,8 +35,10 @@ export default function AppCategoryPage() {
       setApps(data);
       setError(null);
       setPendingChanges([]);
+      useLogStore.getState().addLog("info", "data", `应用分类加载完成 — ${data.length} 个应用, ${data.filter(a => a.isCustomRule).length} 个自定义规则`);
     } catch (e) {
       setError(String(e));
+      useLogStore.getState().addLog("error", "data", "应用分类加载失败: " + e);
     } finally {
       setLoading(false);
     }
@@ -79,11 +82,13 @@ export default function AppCategoryPage() {
           appName: change.appName,
           newCategory: change.newCategory,
         });
+        useLogStore.getState().addLog("success", "data", `分类已更新: ${change.appName}`, `${getCategoryInfo(change.oldCategory).label} → ${getCategoryInfo(change.newCategory).label}`);
       }
       // 重新拉取数据确认
       await fetchApps();
     } catch (e) {
       setError(String(e));
+      useLogStore.getState().addLog("error", "data", "分类变更失败: " + e);
     } finally {
       setApplying(false);
     }
@@ -259,7 +264,7 @@ export default function AppCategoryPage() {
                       />
                     </td>
                     <td className="app-category__duration">
-                      {formatDuration(app.totalDuration)}
+                      {formatSeconds(app.totalDuration)}
                     </td>
                     <td>
                       {isPending ? (

@@ -4,8 +4,8 @@ import { CMD } from "../utils/api";
 import { useLogStore } from "./logStore";
 import type { AppConfig, StorageStats } from "../types";
 
-const log = (level: "info" | "warn" | "error" | "success", category: "connection" | "sync" | "capture" | "system", message: string) => {
-  useLogStore.getState().addLog(level, category, message);
+const log = (level: "info" | "warn" | "error" | "success", category: "connection" | "sync" | "capture" | "system" | "config" | "data" | "ai", message: string, detail?: string) => {
+  useLogStore.getState().addLog(level, category, message, detail);
 };
 
 interface SystemState {
@@ -37,9 +37,9 @@ export const useSystemStore = create<SystemState>((set) => ({
     try {
       const config = await invoke<AppConfig>(CMD.GET_CONFIG);
       set({ config, configLoaded: true });
-      log("info", "system", "配置加载完成 — 服务器: " + config.server.url);
+      log("info", "config", "配置加载完成", `服务器: ${config.server.url}\n截屏间隔: ${config.capture.screenshotIntervalSecs}s\nOCR: ${config.capture.enableOcr ? "开启" : "关闭"}`);
     } catch (e) {
-      log("error", "system", "配置加载失败: " + e);
+      log("error", "config", "配置加载失败: " + e);
     }
   },
 
@@ -66,8 +66,9 @@ export const useSystemStore = create<SystemState>((set) => ({
     try {
       const stats = await invoke<StorageStats>(CMD.GET_STORAGE_STATS);
       set({ storageStats: stats });
-    } catch {
-      // 静默
+      log("info", "data", `存储统计刷新 — ${stats.activityCount} 条活动, ${stats.screenshotCount} 张截图, ${stats.diskUsageMb}MB`);
+    } catch (e) {
+      log("warn", "data", "存储统计获取失败: " + e);
     }
   },
 
@@ -76,7 +77,7 @@ export const useSystemStore = create<SystemState>((set) => ({
     set((s) => ({
       config: s.config ? { ...s.config, server: { ...s.config.server, url } } : null,
     }));
-    log("info", "connection", "服务器地址已更新: " + url);
+    log("info", "config", "服务器地址已更新: " + url);
   },
 
   updateServerToken: async (token: string) => {
@@ -84,7 +85,7 @@ export const useSystemStore = create<SystemState>((set) => ({
     set((s) => ({
       config: s.config ? { ...s.config, server: { ...s.config.server, token } } : null,
     }));
-    log("info", "connection", "Token 已更新");
+    log("info", "config", "Token 已更新");
   },
 
   updateCaptureInterval: async (secs: number) => {
@@ -94,7 +95,7 @@ export const useSystemStore = create<SystemState>((set) => ({
         ? { ...s.config, capture: { ...s.config.capture, screenshotIntervalSecs: secs } }
         : null,
     }));
-    log("info", "capture", "采集间隔已更新: " + secs + "s");
+    log("info", "config", "采集间隔已更新: " + secs + "s");
   },
 
   testConnection: async () => {

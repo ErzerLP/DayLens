@@ -3,7 +3,7 @@
 import { create } from "zustand";
 
 export type LogLevel = "info" | "warn" | "error" | "success";
-export type LogCategory = "connection" | "sync" | "capture" | "system";
+export type LogCategory = "connection" | "sync" | "capture" | "system" | "config" | "data" | "ai";
 
 export interface LogEntry {
   id: number;
@@ -11,6 +11,7 @@ export interface LogEntry {
   level: LogLevel;
   category: LogCategory;
   message: string;
+  detail?: string; // 可选的详细上下文（JSON / 堆栈 / 请求参数等）
 }
 
 interface LogState {
@@ -18,16 +19,16 @@ interface LogState {
   nextId: number;
   maxLogs: number;
 
-  addLog: (level: LogLevel, category: LogCategory, message: string) => void;
+  addLog: (level: LogLevel, category: LogCategory, message: string, detail?: string) => void;
   clearLogs: () => void;
 }
 
 export const useLogStore = create<LogState>((set) => ({
   logs: [],
   nextId: 1,
-  maxLogs: 500,
+  maxLogs: 1000,
 
-  addLog: (level, category, message) => {
+  addLog: (level, category, message, detail) => {
     set((s) => {
       const entry: LogEntry = {
         id: s.nextId,
@@ -35,6 +36,7 @@ export const useLogStore = create<LogState>((set) => ({
         level,
         category,
         message,
+        detail,
       };
       const logs = [entry, ...s.logs].slice(0, s.maxLogs);
       return { logs, nextId: s.nextId + 1 };

@@ -4,6 +4,7 @@ import { Server, Camera, HardDrive, Save, RefreshCw, Wifi, Brain, Zap, ChevronDo
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "../../stores/systemStore";
 import { useThemeStore } from "../../stores/themeStore";
+import { useLogStore } from "../../stores/logStore";
 import "./Settings.css";
 
 type Section = "server" | "capture" | "storage" | "ai" | "appearance";
@@ -122,8 +123,10 @@ function ServerSection() {
       setSaved(true);
       setTestResult("idle");
       setTimeout(() => setSaved(false), 2000);
+      useLogStore.getState().addLog("success", "config", "服务器配置已保存", `URL: ${url}`);
     } catch (e) {
       console.error("保存失败:", e);
+      useLogStore.getState().addLog("error", "config", "服务器配置保存失败: " + e);
     }
   };
 
@@ -146,8 +149,10 @@ function ServerSection() {
       });
       setTzSynced(true);
       setTimeout(() => setTzSynced(false), 2000);
+      useLogStore.getState().addLog("success", "config", "时区已同步: " + tz);
     } catch (e) {
       console.error("时区同步失败:", e);
+      useLogStore.getState().addLog("error", "config", "时区同步失败: " + e);
     }
   };
 
@@ -171,12 +176,12 @@ function ServerSection() {
       </div>
 
       <div className="settings-section__actions">
-        <button className="btn btn--accent" onClick={handleSave}>
+        <button className="settings-btn settings-btn--primary" onClick={handleSave}>
           <Save size={14} />
           {saved ? "已保存 ✓" : "保存"}
         </button>
-        <button className="btn" onClick={handleTest} disabled={connectionChecking || !url}>
-          <Wifi size={14} />
+        <button className="settings-btn settings-btn--outline" onClick={handleTest} disabled={connectionChecking || !url}>
+          {connectionChecking ? <RefreshCw size={14} className="spin" /> : <Wifi size={14} />}
           {connectionChecking ? "测试中..." : "测试连接"}
         </button>
         {testResult === "success" && <span className="test-result test-result--ok">✓ 连接成功</span>}
@@ -337,8 +342,10 @@ function AISection() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      useLogStore.getState().addLog("success", "ai", `AI 配置已保存: ${form.provider} / ${form.model}`);
     } catch (e) {
       setError(String(e));
+      useLogStore.getState().addLog("error", "ai", "AI 配置保存失败: " + e);
     } finally {
       setSaving(false);
     }
@@ -348,6 +355,7 @@ function AISection() {
     setTesting(true);
     setTestResult(null);
     setError(null);
+    useLogStore.getState().addLog("info", "ai", `正在测试 AI 连接: ${form.provider} / ${form.model}`);
     try {
       const result = await serverFetch<{ success: boolean; latencyMs: number; reply?: string; error?: string }>(
         "/api/v1/config/ai/test",
@@ -362,8 +370,14 @@ function AISection() {
         }
       );
       setTestResult(result);
+      if (result.success) {
+        useLogStore.getState().addLog("success", "ai", `AI 连接成功 (${result.latencyMs}ms)`, result.reply);
+      } else {
+        useLogStore.getState().addLog("error", "ai", "AI 连接失败", result.error);
+      }
     } catch (e) {
       setTestResult({ success: false, latencyMs: 0, error: String(e) });
+      useLogStore.getState().addLog("error", "ai", "AI 连接测试异常: " + e);
     } finally {
       setTesting(false);
     }
@@ -506,12 +520,12 @@ function AISection() {
       )}
 
       <div className="settings-section__actions">
-        <button className="btn btn--accent" onClick={handleSave} disabled={saving}>
+        <button className="settings-btn settings-btn--primary" onClick={handleSave} disabled={saving}>
           <Save size={14} />
           {saved ? "已保存 ✓" : saving ? "保存中..." : "保存配置"}
         </button>
-        <button className="btn" onClick={handleTest} disabled={testing}>
-          <Zap size={14} />
+        <button className="settings-btn settings-btn--outline" onClick={handleTest} disabled={testing}>
+          {testing ? <RefreshCw size={14} className="spin" /> : <Zap size={14} />}
           {testing ? "测试中..." : "测试连接"}
         </button>
       </div>

@@ -486,7 +486,7 @@ func (r *PgActivityRepo) GetAppCategories(ctx context.Context, userID int, from,
 	toT, _ := time.Parse("2006-01-02", to)
 	toT = toT.Add(24 * time.Hour)
 
-	// 使用子查询取每个应用最近活动对应的分类，避免同应用多分类导致重复
+	// LEFT JOIN category_rules 以正确标记自定义规则，并优先使用自定义分类
 	rows, err := r.pool.Query(ctx, `
 		WITH ranked AS (
 			SELECT app_name, category, duration, timestamp,
@@ -495,11 +495,13 @@ func (r *PgActivityRepo) GetAppCategories(ctx context.Context, userID int, from,
 			WHERE user_id = $1 AND timestamp >= $2 AND timestamp < $3
 		)
 		SELECT r.app_name,
-			(SELECT category FROM ranked WHERE app_name = r.app_name AND rn = 1) AS category,
+			COALESCE(cr.category, (SELECT category FROM ranked WHERE app_name = r.app_name AND rn = 1)) AS category,
 			COALESCE(SUM(r.duration), 0) AS total_duration,
-			MAX(r.timestamp) AS last_seen
+			MAX(r.timestamp) AS last_seen,
+			CASE WHEN cr.app_name IS NOT NULL THEN true ELSE false END AS is_custom_rule
 		FROM ranked r
-		GROUP BY r.app_name
+		LEFT JOIN category_rules cr ON cr.user_id = $1 AND cr.app_name = r.app_name
+		GROUP BY r.app_name, cr.category, cr.app_name
 		ORDER BY total_duration DESC`,
 		userID, fromT.Unix(), toT.Unix())
 	if err != nil {
@@ -510,7 +512,7 @@ func (r *PgActivityRepo) GetAppCategories(ctx context.Context, userID int, from,
 	var items []*activity.AppCategoryInfo
 	for rows.Next() {
 		info := &activity.AppCategoryInfo{}
-		if err := rows.Scan(&info.AppName, &info.Category, &info.TotalDuration, &info.LastSeen); err != nil {
+		if err := rows.Scan(&info.AppName, &info.Category, &info.TotalDuration, &info.LastSeen, &info.IsCustomRule); err != nil {
 			return nil, err
 		}
 		items = append(items, info)

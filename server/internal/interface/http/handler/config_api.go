@@ -93,7 +93,7 @@ func (h *ConfigHandler) TestAI(c *gin.Context) {
 
 	provider := ai.NewProvider(testCfg)
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
 	start := time.Now()
