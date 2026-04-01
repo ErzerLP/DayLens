@@ -80,6 +80,7 @@ export interface DailyReport {
   date: string;
   content: string;
   generatedAt: string;
+  usedAi?: boolean;
 }
 
 export interface WeeklyReview {

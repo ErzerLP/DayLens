@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -38,7 +40,11 @@ func (h *ReportHandler) Generate(c *gin.Context) {
 		return
 	}
 
-	r, err := h.svc.Generate(c.Request.Context(), defaultUserID, req.Date, req.ForceRegenerate)
+	// AI 生成报告可能耗时较长，使用独立超时 context
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 90*time.Second)
+	defer cancel()
+
+	r, err := h.svc.Generate(ctx, defaultUserID, req.Date, req.ForceRegenerate)
 	if err != nil {
 		handleError(c, err)
 		return

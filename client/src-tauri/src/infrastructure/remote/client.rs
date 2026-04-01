@@ -110,6 +110,29 @@ impl RemoteClient {
         self.parse_response(resp, path).await
     }
 
+    /// POST 请求（长超时，用于 AI 生成等耗时操作）
+    pub async fn post_long<B: Serialize, T: DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &B,
+        timeout_secs: u64,
+    ) -> Result<T> {
+        let url = format!("{}{path}", self.base_url);
+        let resp = self
+            .client
+            .post(&url)
+            .bearer_auth(&self.token)
+            .timeout(Duration::from_secs(timeout_secs))
+            .json(body)
+            .send()
+            .await
+            .map_err(|e| AppError::Network(format!(
+                "POST {path} 失败: {e}",
+            )))?;
+
+        self.parse_response(resp, path).await
+    }
+
     /// PUT 请求
     pub async fn put<B: Serialize, T: DeserializeOwned>(
         &self,

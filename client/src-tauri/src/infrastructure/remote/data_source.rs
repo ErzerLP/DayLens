@@ -96,12 +96,13 @@ impl DataSource for RemoteDataSource {
             date: String,
             force_regenerate: bool,
         }
-        self.client.read().await.post(
+        self.client.read().await.post_long(
             "/api/v1/reports/generate",
             &Req {
                 date: date.to_string(),
                 force_regenerate,
             },
+            120, // AI 生成可能需要较长时间
         ).await
     }
 
