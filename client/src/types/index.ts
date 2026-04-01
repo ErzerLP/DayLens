@@ -79,8 +79,11 @@ export interface HourlySummary {
 export interface DailyReport {
   date: string;
   content: string;
-  generatedAt: string;
+  aiMode: string;
+  modelName: string;
   usedAi?: boolean;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface WeeklyReview {

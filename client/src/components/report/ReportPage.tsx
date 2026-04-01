@@ -40,7 +40,7 @@ function formatDateCN(dateStr: string) {
 function shiftDate(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function ReportPage() {
@@ -127,6 +127,12 @@ export default function ReportPage() {
               className="report-date-picker__hidden-input"
               value={date}
               max={today()}
+              onClick={(e) => {
+                const target = e.target as any;
+                if (typeof target.showPicker === "function") {
+                  target.showPicker();
+                }
+              }}
               onChange={(e) => setDate(e.target.value)}
             />
           </label>
@@ -202,7 +208,9 @@ export default function ReportPage() {
             <ReactMarkdown>{content.content}</ReactMarkdown>
             <div className="report-page__generated-at">
               {content.usedAi && <span className="report-page__ai-badge">AI 生成</span>}
-              生成时间：{content.generatedAt}
+              {content.createdAt > 0 && (
+                <>生成时间：{new Date(content.createdAt * 1000).toLocaleString("zh-CN")}</>
+              )}
             </div>
           </div>
         ) : report.loading ? (

@@ -25,7 +25,7 @@ func NewPgReportRepo(pool *pgxpool.Pool) *PgReportRepo {
 func (r *PgReportRepo) Upsert(ctx context.Context, userID int, rpt *report.DailyReport) error {
 	_, err := r.pool.Exec(ctx, `
 		INSERT INTO daily_reports (user_id, date, content, ai_mode, model_name, used_ai)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		VALUES ($1, $2::DATE, $3, $4, $5, $6)
 		ON CONFLICT (user_id, date) DO UPDATE SET
 			content = EXCLUDED.content,
 			ai_mode = EXCLUDED.ai_mode,
@@ -43,11 +43,11 @@ func (r *PgReportRepo) Upsert(ctx context.Context, userID int, rpt *report.Daily
 func (r *PgReportRepo) GetByDate(ctx context.Context, userID int, date string) (*report.DailyReport, error) {
 	rpt := &report.DailyReport{}
 	err := r.pool.QueryRow(ctx, `
-		SELECT date, content, ai_mode, COALESCE(model_name, ''), used_ai,
+		SELECT to_char(date, 'YYYY-MM-DD'), content, ai_mode, COALESCE(model_name, ''), used_ai,
 			EXTRACT(EPOCH FROM created_at)::BIGINT,
 			EXTRACT(EPOCH FROM updated_at)::BIGINT
 		FROM daily_reports
-		WHERE user_id = $1 AND date = $2`,
+		WHERE user_id = $1 AND date = $2::DATE`,
 		userID, date,
 	).Scan(&rpt.Date, &rpt.Content, &rpt.AIMode, &rpt.ModelName, &rpt.UsedAI,
 		&rpt.CreatedAt, &rpt.UpdatedAt)
