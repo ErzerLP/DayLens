@@ -1,6 +1,6 @@
 [package]
 name = "daylens"
-version = "0.1.0"
+version = "0.1.1"
 description = "DayLens — 工作活动追踪与智能分析客户端"
 authors = ["DayLens"]
 edition = "2021"
